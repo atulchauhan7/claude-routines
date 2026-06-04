@@ -318,6 +318,21 @@ def compute_7day_averages(daily_rows: list, col_map: dict) -> dict:
     return avgs
 
 
+def weighted_roas(campaigns: list) -> float:
+    """Spend-weighted blended ROAS across campaigns (ignores campaigns with no ROAS)."""
+    total_spend = 0.0
+    total_revenue = 0.0
+    for c in campaigns:
+        spend = safe_float(c.get("spend", 0))
+        roas = extract_roas(c.get("purchase_roas"))
+        if roas is not None and spend > 0:
+            total_spend += spend
+            total_revenue += spend * roas
+    if total_spend == 0:
+        return 0.0
+    return round(total_revenue / total_spend, 2)
+
+
 # ─────────────────────── Recommendations engine ────────────────────────────────
 
 def generate_recommendations(shopify_today: dict, shopify_7d_avg: dict,
@@ -345,6 +360,28 @@ def generate_recommendations(shopify_today: dict, shopify_7d_avg: dict,
     gross_val = safe_float(shopify_today.get("sales", {}).get("gross_sales", 0))
     if gross_val > 0 and returns_val / gross_val > 0.12:
         recs.append(f"⚠️ High return rate ({returns_val/gross_val*100:.1f}% of gross) — check sizing, quality complaints, or product descriptions.")
+
+    # ── Sessions vs orders divergence (conversion funnel anomaly) ──
+    sess_today = shopify_today.get("sessions", {})
+    sessions   = safe_float(sess_today.get("sessions", 0))
+    avg_sessions = shopify_7d_avg.get("sessions", 0)
+    if sessions > 0 and orders > 0 and avg_sessions > 0 and avg_orders > 0:
+        conv_today = orders / sessions
+        conv_avg   = avg_orders / avg_sessions
+        sess_chg   = pct_change(sessions, avg_sessions)
+        order_chg  = pct_change(orders, avg_orders)
+        if sess_chg is not None and order_chg is not None:
+            if sess_chg > 5 and order_chg < -10:
+                recs.append(
+                    f"🚨 Sessions UP {sess_chg:.1f}% but orders DOWN {abs(order_chg):.1f}% — conversion rate collapsed. "
+                    "Check checkout, payment gateway, and product page loading speed immediately."
+                )
+    completed_checkout = safe_float(sess_today.get("sessions_that_completed_checkout", 0))
+    if orders > 5 and completed_checkout == 0:
+        notes.append(
+            "Shopify session checkout-completion metric shows 0 completed checkouts despite recorded orders — "
+            "likely a sessions tracking/attribution gap. Verify pixel and checkout event firing."
+        )
 
     # ── Meta campaign insights ──
     for c in meta_campaigns:
@@ -640,9 +677,7 @@ def build_meta_daily_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
     cpc  = round(total_spend / total_clicks, 2) if total_clicks else 0
     cpm  = round(total_spend / total_impr * 1000, 2) if total_impr else 0
     cpa  = round(total_spend / total_purch, 2) if total_purch else 0
-    roas_vals = [extract_roas(c.get("purchase_roas")) for c in today_campaigns
-                 if extract_roas(c.get("purchase_roas")) is not None]
-    blended_roas = round(avg(roas_vals), 2) if roas_vals else 0
+    blended_roas = weighted_roas(today_campaigns)
 
     today_str = yesterday_kolkata().isoformat()
     today_row = [today_str, round(total_spend, 2), total_impr, total_reach,
@@ -1094,9 +1129,7 @@ def update_spreadsheet(date_str: str,
     total_purch  = sum(extract_purchases(c.get("actions", [])) for c in meta_campaigns)
     total_ctr    = round(total_clicks / total_impr * 100, 2) if total_impr else 0
     total_cpa    = round(total_spend / total_purch, 2) if total_purch else 0
-    roas_vals    = [extract_roas(c.get("purchase_roas")) for c in meta_campaigns
-                    if extract_roas(c.get("purchase_roas")) is not None]
-    blended_roas = round(avg(roas_vals), 2) if roas_vals else 0
+    blended_roas = weighted_roas(meta_campaigns)
     meta_summary = {
         "spend": round(total_spend, 2),
         "impressions": total_impr,
@@ -1297,6 +1330,9 @@ def main():
         "orders":              col_idx.get("orders", 3),
         "average_order_value": col_idx.get("average_order_value", 4),
     })
+    # Merge session 7-day avg from session query if available
+    sess_7d_avg = compute_7day_averages(prev_rows, {"sessions": col_idx.get("sessions", 10)})
+    shopify_7d_avg.update(sess_7d_avg)
 
     recs, notes = generate_recommendations(
         shopify_today, shopify_7d_avg, meta_campaigns, meta_adsets
