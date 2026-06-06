@@ -322,11 +322,13 @@ def compute_7day_averages(daily_rows: list, col_map: dict) -> dict:
 
 def generate_recommendations(shopify_today: dict, shopify_7d_avg: dict,
                               meta_campaigns: list, meta_adsets: list,
-                              anomalies: list | None = None) -> list:
+                              anomalies: list | None = None,
+                              voided_orders: int = 0,
+                              low_inventory_products: list | None = None) -> list:
     recs = []
     notes = []
 
-    # ── Shopify insights ──
+    # ── Shopify revenue insights ──
     gross = safe_float(shopify_today.get("sales", {}).get("gross_sales", 0))
     avg_gross = shopify_7d_avg.get("gross_sales", 0)
     if avg_gross > 0:
@@ -336,47 +338,79 @@ def generate_recommendations(shopify_today: dict, shopify_7d_avg: dict,
         elif chg is not None and chg > 20:
             recs.append(f"✅ Revenue up {chg:.1f}% vs 7-day avg — identify top-performing campaigns and scale budgets.")
 
+    # ── Orders vs avg ──
     orders = safe_float(shopify_today.get("sales", {}).get("orders", 0))
     avg_orders = shopify_7d_avg.get("orders", 0)
     if avg_orders > 0 and orders < avg_orders * 0.8:
-        recs.append("⚠️ Orders below 80% of 7-day avg — review traffic sources and Meta campaign delivery.")
+        recs.append(f"⚠️ Orders ({int(orders)}) below 80% of 7-day avg ({avg_orders:.1f}) — review traffic sources and Meta campaign delivery.")
 
+    # ── Return rate ──
     returns_val = abs(safe_float(shopify_today.get("sales", {}).get("returns", 0)))
     gross_val = safe_float(shopify_today.get("sales", {}).get("gross_sales", 0))
-    if gross_val > 0 and returns_val / gross_val > 0.12:
-        recs.append(f"⚠️ High return rate ({returns_val/gross_val*100:.1f}% of gross) — check sizing, quality complaints, or product descriptions.")
+    if gross_val > 0:
+        ret_rate = returns_val / gross_val
+        if ret_rate > 0.15:
+            recs.append(f"🚨 Very high return rate ({ret_rate*100:.1f}% of gross = ₹{returns_val:,.0f}) — urgently check top products for sizing, quality, or description issues.")
+        elif ret_rate > 0.10:
+            recs.append(f"⚠️ High return rate ({ret_rate*100:.1f}% of gross = ₹{returns_val:,.0f}) — check sizing guides, product descriptions, and customer complaints.")
+
+    # ── Voided / failed payments ──
+    if voided_orders >= 3:
+        recs.append(f"⚠️ {voided_orders} voided/failed payment orders detected — check payment gateway health and follow up with affected customers.")
+    elif voided_orders > 0:
+        notes.append(f"{voided_orders} voided order(s) detected — possible payment failures.")
+
+    # ── Low inventory alert ──
+    for prod_name in (low_inventory_products or [])[:3]:
+        recs.append(f"⚠️ Low inventory: '{prod_name[:60]}' — reorder or pause ads for this product to avoid stockouts.")
 
     # ── Meta campaign insights ──
+    good_campaigns = []
+    bad_campaigns  = []
     for c in meta_campaigns:
         spend = safe_float(c.get("spend", 0))
         roas = extract_roas(c.get("purchase_roas"))
         name = c.get("campaign_name", c.get("name", ""))
-        if roas is not None and spend > 500 and roas < 1.0:
-            recs.append(f"🚨 PAUSE '{name}' — ROAS {roas}x is below breakeven. Reallocate ₹{spend:,.0f}/day budget.")
-        elif roas is not None and spend > 500 and roas < 1.5:
-            recs.append(f"⚠️ Review '{name}' — ROAS {roas}x is low. Test new creatives or tighten audience.")
-        elif roas is not None and roas > 5.0 and spend > 1000:
-            recs.append(f"✅ Scale '{name}' — ROAS {roas}x is excellent. Increase budget by 20–30%.")
+        if roas is not None and spend > 500:
+            if roas < 1.0:
+                bad_campaigns.append((name, roas, spend))
+            elif roas < 1.5:
+                recs.append(f"⚠️ Review '{name}' — ROAS {roas:.2f}x is low. Test new creatives or tighten audience.")
+            elif roas > 4.0:
+                good_campaigns.append((name, roas, spend))
 
-    # ── Ad set insights ──
+    for name, roas, spend in bad_campaigns:
+        recs.insert(0, f"🚨 PAUSE '{name}' — ROAS {roas:.2f}x is below breakeven. Reallocate ₹{spend:,.0f} budget to performing campaigns.")
+
+    for name, roas, spend in good_campaigns:
+        recs.append(f"✅ Scale '{name}' — ROAS {roas:.2f}x is excellent. Increase daily budget by 20–30%.")
+
+    # ── Ad set: low CTR ──
     for a in meta_adsets:
         spend = safe_float(a.get("spend", 0))
-        roas = extract_roas(a.get("purchase_roas"))
-        name = a.get("adset_name", a.get("name", ""))
-        ctr  = safe_float(a.get("ctr", 0))
+        name  = a.get("adset_name", a.get("name", ""))
+        ctr   = safe_float(a.get("ctr", 0))
         if spend > 1000 and ctr < 0.8:
-            recs.append(f"⚠️ Low CTR ({ctr:.2f}%) on ad set '{name}' — refresh creative or test new hooks.")
+            recs.append(f"⚠️ Low CTR ({ctr:.2f}%) on ad set '{name}' — refresh creative or test new visual hooks.")
 
     # ── Anomaly signals ──
     for anomaly in (anomalies or []):
         recs.append(f"📊 Meta signal: {anomaly}")
 
-    # ── Fallback generic recs if nothing specific ──
+    # ── AOV improvement ──
+    aov = safe_float(shopify_today.get("sales", {}).get("average_order_value", 0))
+    avg_aov = shopify_7d_avg.get("average_order_value", 0)
+    if avg_aov > 0:
+        aov_chg = pct_change(aov, avg_aov)
+        if aov_chg is not None and aov_chg > 10:
+            recs.append(f"✅ AOV up {aov_chg:.1f}% (₹{aov:,.0f} vs avg ₹{avg_aov:,.0f}) — bundle promotions or upsells are working.")
+
+    # ── Fallback generic recs ──
     if not recs:
         recs.append("✅ All campaigns performing within normal range — continue monitoring.")
 
-    recs.append("🔍 Review Shopify abandoned checkouts and set up recovery email flows if not already active.")
-    recs.append("📱 Check product pages for top sellers — ensure images, descriptions, and sizes are current.")
+    recs.append("🔍 Review Shopify abandoned checkouts and set up WhatsApp recovery flows if not already active.")
+    recs.append("📱 Check product pages for top sellers — ensure images, descriptions, and size charts are current.")
 
     return recs[:7], notes   # cap at 7 actionable recs
 
@@ -1298,8 +1332,50 @@ def main():
         "average_order_value": col_idx.get("average_order_value", 4),
     })
 
+    # Count voided/failed orders via Shopify REST (best-effort)
+    voided_orders = 0
+    low_inventory_products: list = []
+    try:
+        r = requests.get(
+            f"https://{SHOPIFY_DOMAIN}/admin/api/2024-01/orders.json",
+            headers={"X-Shopify-Access-Token": SHOPIFY_TOKEN},
+            params={
+                "status": "any",
+                "financial_status": "voided",
+                "created_at_min": f"{date_str}T00:00:00+05:30",
+                "created_at_max": f"{date_str}T23:59:59+05:30",
+                "limit": 50,
+            },
+            timeout=15,
+        )
+        if r.ok:
+            voided_orders = len(r.json().get("orders", []))
+    except Exception:
+        pass
+
+    # Low inventory alert: products with ending_inventory_units < 5 for any variant
+    try:
+        inv_q = (
+            f"FROM inventory SHOW ending_inventory_units "
+            f"GROUP BY product_title, product_variant_title "
+            f"SINCE {date_str} UNTIL {date_str}"
+        )
+        inv_r = shopify_analytics(inv_q)
+        for row in inv_r.get("rows", []):
+            try:
+                units = int(safe_float(row[2]))
+                if units < 5:
+                    low_inventory_products.append(str(row[0]))
+            except (IndexError, ValueError):
+                pass
+        low_inventory_products = list(dict.fromkeys(low_inventory_products))  # deduplicate
+    except Exception:
+        pass
+
     recs, notes = generate_recommendations(
-        shopify_today, shopify_7d_avg, meta_campaigns, meta_adsets
+        shopify_today, shopify_7d_avg, meta_campaigns, meta_adsets,
+        voided_orders=voided_orders,
+        low_inventory_products=low_inventory_products,
     )
     urgent = [r for r in recs if r.startswith("🚨")]
 
