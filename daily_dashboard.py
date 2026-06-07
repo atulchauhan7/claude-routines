@@ -364,8 +364,18 @@ def generate_recommendations(shopify_today: dict, shopify_7d_avg: dict,
         roas = extract_roas(a.get("purchase_roas"))
         name = a.get("adset_name", a.get("name", ""))
         ctr  = safe_float(a.get("ctr", 0))
+        delivery = a.get("delivery", {})
+        substatuses = delivery.get("substatuses", []) if isinstance(delivery, dict) else []
+        in_learning = "in_learning_phase" in substatuses
+        if in_learning:
+            recs.append(f"ℹ️ Ad set '{name}' is in Learning Phase — do NOT pause; let it exit before evaluating performance.")
+            continue
         if spend > 1000 and ctr < 0.8:
             recs.append(f"⚠️ Low CTR ({ctr:.2f}%) on ad set '{name}' — refresh creative or test new hooks.")
+        if roas is not None and spend > 1000 and roas < 1.5:
+            recs.append(f"⚠️ Ad set '{name}' ROAS {roas}x is dangerously low — consider pausing or swapping creative.")
+        if roas is not None and roas > 5.0 and spend > 1000:
+            recs.append(f"✅ Scale ad set '{name}' — ROAS {roas}x is excellent. Increase budget by 30–50%.")
 
     # ── Anomaly signals ──
     for anomaly in (anomalies or []):
@@ -1234,9 +1244,11 @@ Dhirai Daily Bot
 
 def main():
     yesterday     = yesterday_kolkata()
-    seven_ago     = yesterday - datetime.timedelta(days=6)   # 7-day window starts here
+    # 7-day window: 7 full days strictly before yesterday (yesterday excluded from avg)
+    seven_ago     = yesterday - datetime.timedelta(days=7)
     date_str      = yesterday.isoformat()
     since_7d      = seven_ago.isoformat()
+    until_7d      = (yesterday - datetime.timedelta(days=1)).isoformat()
     unavailable   = []
 
     print(f"📅 Running dashboard for {date_str} (Asia/Kolkata)")
@@ -1251,19 +1263,17 @@ def main():
         unavailable.append(f"Shopify daily data unavailable: {e}")
 
     try:
-        shopify_7d = fetch_shopify_7day(since_7d, date_str)
+        shopify_7d = fetch_shopify_7day(since_7d, until_7d)
     except Exception as e:
         print(f"  ⚠️ Shopify 7-day fetch failed: {e}")
         shopify_7d = {"rows": [], "columns": []}
         unavailable.append(f"Shopify 7-day data unavailable: {e}")
 
-    try:
-        shopify_prod_today = fetch_shopify_daily(date_str)["top_products"] if not unavailable else {"rows": [], "columns": []}
-    except Exception:
-        shopify_prod_today = {"rows": [], "columns": []}
+    # Reuse already-fetched today data instead of a second API call
+    shopify_prod_today = shopify_today.get("top_products", {"rows": [], "columns": []})
 
     try:
-        shopify_prod_7d = fetch_shopify_7day_products(since_7d, date_str)
+        shopify_prod_7d = fetch_shopify_7day_products(since_7d, until_7d)
     except Exception as e:
         shopify_prod_7d = {"rows": [], "columns": []}
         unavailable.append(f"Shopify 7-day product data unavailable: {e}")
