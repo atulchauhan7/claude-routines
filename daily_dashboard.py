@@ -560,46 +560,52 @@ def write_header_row(ws, row: list, row_idx: int = 0):
 # ─────────────────────── Sheet tab builders ────────────────────────────────────
 
 def build_shopify_daily_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
-                             today_data: dict, seven_day_rows: list, seven_day_cols: list):
-    """Populate the 'Shopify Daily Data' tab."""
-    ws.clear()
+                             today_data: dict, seven_day_rows: list, seven_day_cols: list,
+                             date_str: str):
+    """Populate the 'Shopify Daily Data' tab — append-only, duplicate-safe."""
     headers = [
         "Date", "Gross Sales (₹)", "Net Sales (₹)", "Orders",
         "AOV (₹)", "Total Sales (₹)", "Discounts (₹)", "Returns (₹)",
         "Shipping (₹)", "Taxes (₹)", "Sessions", "Cart Adds",
         "Reached Checkout", "Completed Checkout", "Conversion Rate (%)",
     ]
-    ws.update("A1", [headers])
 
-    # Write 7-day historical rows
-    existing_dates = set()
-    all_data_rows = []
+    existing_values = ws.get_all_values()
+    if not existing_values:
+        ws.update("A1", [headers])
+        existing_dates: set = set()
+        next_row = 2
+    else:
+        existing_dates = {row[0] for row in existing_values[1:] if row}
+        next_row = len(existing_values) + 1
 
-    col_idx = {c: i for i, c in enumerate(seven_day_cols)}
-    for row in seven_day_rows:
-        date_val = row[col_idx.get("day", 0)] if seven_day_cols else row[0]
-        existing_dates.add(str(date_val))
-        data_row = [
-            str(date_val),
-            safe_float(row[col_idx.get("gross_sales", 1)]),
-            safe_float(row[col_idx.get("net_sales", 2)]),
-            int(safe_float(row[col_idx.get("orders", 3)])),
-            round(safe_float(row[col_idx.get("average_order_value", 4)]), 2),
-            safe_float(row[col_idx.get("total_sales", 5)]),
-            abs(safe_float(row[col_idx.get("discounts", 6)])),
-            abs(safe_float(row[col_idx.get("returns", 7)])),
-            safe_float(row[col_idx.get("shipping_charges", 8)]),
-            safe_float(row[col_idx.get("taxes", 9)]),
-            "", "", "", "", "",   # sessions cols TBD
+    if date_str not in existing_dates:
+        s    = today_data.get("sales", {})
+        sess = today_data.get("sessions", {})
+        conv = safe_float(sess.get("conversion_rate", 0))
+        # ShopifyQL returns conversion_rate as a decimal (0.001…); multiply to get %
+        if conv < 1:
+            conv = round(conv * 100, 4)
+        new_row = [
+            date_str,
+            safe_float(s.get("gross_sales", 0)),
+            safe_float(s.get("net_sales", 0)),
+            int(safe_float(s.get("orders", 0))),
+            round(safe_float(s.get("average_order_value", 0)), 2),
+            safe_float(s.get("total_sales", 0)),
+            abs(safe_float(s.get("discounts", 0))),
+            abs(safe_float(s.get("returns", 0))),
+            safe_float(s.get("shipping_charges", 0)),
+            safe_float(s.get("taxes", 0)),
+            int(safe_float(sess.get("sessions", 0))),
+            int(safe_float(sess.get("sessions_with_cart_additions", 0))),
+            int(safe_float(sess.get("sessions_that_reached_checkout", 0))),
+            int(safe_float(sess.get("sessions_that_completed_checkout", 0))),
+            conv,
         ]
-        all_data_rows.append(data_row)
+        ws.update(f"A{next_row}", [new_row])
 
-    if all_data_rows:
-        ws.update(f"A2", all_data_rows)
-
-    total_rows = len(all_data_rows) + 2   # +1 header +1 for next append
-
-    # Format
+    total_rows = max(next_row + 1, 3)
     requests_body = [
         cell_format(sheets_svc, spreadsheet_id, sheet_id,
                     0, 1, 0, len(headers),
@@ -608,13 +614,18 @@ def build_shopify_daily_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
         add_filter_request(sheet_id, 0, total_rows, 0, len(headers)),
         auto_resize_request(sheet_id, 0, len(headers)),
     ]
-    # Currency format for sales columns (B-G, H = col 1-7)
     for col in range(1, 10):
         requests_body.append(
             cell_format(sheets_svc, spreadsheet_id, sheet_id,
                         1, total_rows, col, col + 1,
                         number_format='₹#,##0.00')
         )
+    # Percentage format for conversion rate column (O = col 14)
+    requests_body.append(
+        cell_format(sheets_svc, spreadsheet_id, sheet_id,
+                    1, total_rows, 14, 15,
+                    number_format='0.00"%"')
+    )
     sheets_svc.spreadsheets().batchUpdate(
         spreadsheetId=spreadsheet_id, body={"requests": requests_body}
     ).execute()
@@ -1110,7 +1121,8 @@ def update_spreadsheet(date_str: str,
     # ── Build each tab ──
     build_shopify_daily_tab(
         tab_map["Shopify Daily Data"], sheets_svc, ss.id,
-        sheet_ids["Shopify Daily Data"], shopify_today, seven_day_rows, seven_day_cols
+        sheet_ids["Shopify Daily Data"], shopify_today, seven_day_rows, seven_day_cols,
+        date_str
     )
     build_meta_daily_tab(
         tab_map["Meta Ads Daily Data"], sheets_svc, ss.id,
