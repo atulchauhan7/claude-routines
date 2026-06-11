@@ -1,41 +1,68 @@
 #!/usr/bin/env python3
 """
-Daily Store & Ads Performance Dashboard
-Runs every morning in Asia/Kolkata timezone.
-Shopify store: 36dhns-ed.myshopify.com (Dhirai)
-Meta Ads account: 979830497515712 (Dhirai)
+Daily Store & Ads Performance Dashboard for Dhirai (dhirai.in)
+Runs every morning at 07:00 IST via cron.
 
-Requirements:
-    pip install gspread google-auth google-auth-oauthlib google-api-python-client
-                requests pytz
+Fetches Shopify + Meta Ads data, writes 6-tab Google Sheet, sends Gmail report.
 
-Environment variables (set in .env or system):
+Environment variables (required):
     SHOPIFY_STORE_DOMAIN      e.g. 36dhns-ed.myshopify.com
     SHOPIFY_ACCESS_TOKEN      Private-app Admin API token
-    META_ACCESS_TOKEN         Meta Marketing API user access token
+    META_ACCESS_TOKEN         Meta Marketing API user/system access token
     META_AD_ACCOUNT_ID        e.g. 979830497515712
-    GOOGLE_SA_CREDENTIALS     Path to Google service-account JSON file
+    GOOGLE_SA_CREDENTIALS     Path to Google service-account JSON (Sheets access)
+    GMAIL_CREDENTIALS_JSON    Path to Gmail OAuth 2.0 credentials JSON
     GMAIL_TO                  Recipient email (atul012001@gmail.com)
-    GMAIL_CC                  CC email(s), comma-separated (leave blank for none)
+    GOOGLE_SHEET_EMAIL        Email to share sheet with (writer access)
+
+Optional:
+    GMAIL_CC                  CC email(s), comma-separated
     SPREADSHEET_NAME          Sheet name (default: Daily Store & Ads Performance Sheet)
+    GMAIL_TOKEN_PICKLE        Token cache path (default: gmail_token.pickle)
 """
 
 import os
+import sys
 import json
 import datetime
 import re
+import pickle
+import base64
+import logging
+import traceback
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import requests
 import gspread
-from google.oauth2.service_account import Credentials
+from google.oauth2.service_account import Credentials as SACredentials
+from google.oauth2.credentials import Credentials as OAuthCredentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import pytz
 
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+log = logging.getLogger(__name__)
+
 # ─────────────────────── Configuration ────────────────────────────────────────
 
 KOLKATA_TZ = pytz.timezone("Asia/Kolkata")
-SCOPES = [
+
+# Google Sheets uses service account; Gmail uses OAuth 2.0
+SA_SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+GMAIL_SCOPES = [
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.compose",
 ]
@@ -43,10 +70,13 @@ SCOPES = [
 SHOPIFY_DOMAIN    = os.environ.get("SHOPIFY_STORE_DOMAIN", "36dhns-ed.myshopify.com")
 SHOPIFY_TOKEN     = os.environ.get("SHOPIFY_ACCESS_TOKEN", "")
 META_TOKEN        = os.environ.get("META_ACCESS_TOKEN", "")
-META_ACCOUNT_ID   = os.environ.get("META_AD_ACCOUNT_ID", "979830497515712")
+META_ACCOUNT_ID   = os.environ.get("META_AD_ACCOUNT_ID", "979830497515712").lstrip("act_")
 SA_CREDENTIALS    = os.environ.get("GOOGLE_SA_CREDENTIALS", "service_account.json")
+GMAIL_CREDENTIALS_JSON = os.environ.get("GMAIL_CREDENTIALS_JSON", "gmail_credentials.json")
+GMAIL_TOKEN_PICKLE     = os.environ.get("GMAIL_TOKEN_PICKLE", "gmail_token.pickle")
 GMAIL_TO          = os.environ.get("GMAIL_TO", "atul012001@gmail.com")
 GMAIL_CC          = os.environ.get("GMAIL_CC", "")
+GOOGLE_SHEET_EMAIL = os.environ.get("GOOGLE_SHEET_EMAIL", "atul.chauhan.95185@gmail.com")
 SPREADSHEET_NAME  = os.environ.get("SPREADSHEET_NAME", "Daily Store & Ads Performance Sheet")
 
 # ─────────────────────── Colours (hex without #) ──────────────────────────────
@@ -63,12 +93,47 @@ C_WHITE       = {"red": 1,     "green": 1,     "blue": 1}
 
 # ─────────────────────── Google Auth ──────────────────────────────────────────
 
-def get_google_clients():
-    creds = Credentials.from_service_account_file(SA_CREDENTIALS, scopes=SCOPES)
+def get_sheets_clients():
+    """Return (gspread.Client, sheets_service) using service account credentials."""
+    creds = SACredentials.from_service_account_file(SA_CREDENTIALS, scopes=SA_SCOPES)
     gc = gspread.authorize(creds)
     sheets_service = build("sheets", "v4", credentials=creds)
-    gmail_service  = build("gmail",  "v1", credentials=creds)
-    return gc, sheets_service, gmail_service
+    return gc, sheets_service
+
+
+def get_gmail_service():
+    """Return Gmail API service using OAuth 2.0 (with token caching)."""
+    creds = None
+
+    if os.path.exists(GMAIL_TOKEN_PICKLE):
+        with open(GMAIL_TOKEN_PICKLE, "rb") as f:
+            creds = pickle.load(f)
+
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                log.info("Gmail token refreshed.")
+            except Exception as e:
+                log.warning("Token refresh failed (%s); re-authorising.", e)
+                creds = None
+
+        if not creds:
+            if not os.path.exists(GMAIL_CREDENTIALS_JSON):
+                log.warning(
+                    "Gmail OAuth credentials not found at '%s'. "
+                    "Download from Google Cloud Console (Desktop App type) and set GMAIL_CREDENTIALS_JSON.",
+                    GMAIL_CREDENTIALS_JSON,
+                )
+                return None
+            flow = InstalledAppFlow.from_client_secrets_file(GMAIL_CREDENTIALS_JSON, GMAIL_SCOPES)
+            creds = flow.run_local_server(port=0)
+
+        with open(GMAIL_TOKEN_PICKLE, "wb") as f:
+            pickle.dump(creds, f)
+        log.info("Gmail token saved to %s", GMAIL_TOKEN_PICKLE)
+
+    return build("gmail", "v1", credentials=creds)
 
 # ─────────────────────── Date helpers ─────────────────────────────────────────
 
@@ -205,32 +270,76 @@ def meta_request(endpoint: str, params: dict) -> dict:
     return r.json()
 
 
-def fetch_meta_campaigns(date_str: str) -> list:
-    """Campaign-level insights for a single day."""
-    r = meta_request(
-        f"act_{META_ACCOUNT_ID}/insights",
+def meta_request_paginated(endpoint: str, params: dict) -> list:
+    """Fetch all pages from a Meta API paginated endpoint."""
+    params = dict(params)
+    params["access_token"] = META_TOKEN
+    results = []
+    url = f"{META_BASE}/{endpoint}"
+    while url:
+        r = requests.get(url, params=params, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        results.extend(data.get("data", []))
+        paging = data.get("paging", {})
+        url = paging.get("next")
+        params = {}  # next URL already contains all params
+    return results
+
+
+def fetch_meta_active_campaign_ids() -> list:
+    """Return IDs of all ACTIVE campaigns in the ad account."""
+    campaigns = meta_request_paginated(
+        f"act_{META_ACCOUNT_ID}/campaigns",
         {
-            "level": "campaign",
-            "fields": META_FIELDS,
-            "time_range": json.dumps({"since": date_str, "until": date_str}),
-            "limit": 50,
+            "fields": "id,name,status,effective_status",
+            "effective_status": json.dumps(["ACTIVE"]),
+            "limit": 200,
         },
     )
-    return r.get("data", [])
+    ids = [c["id"] for c in campaigns if c.get("effective_status") == "ACTIVE"]
+    log.info("Active Meta campaigns: %d", len(ids))
+    return ids
 
 
-def fetch_meta_adsets(date_str: str) -> list:
+def fetch_meta_campaigns(date_str: str, active_ids: list = None) -> list:
+    """Campaign-level insights for a single day, filtered to active campaigns."""
+    filtering = []
+    if active_ids:
+        filtering = [{"field": "campaign.id", "operator": "IN", "value": active_ids}]
+
+    params = {
+        "level": "campaign",
+        "fields": META_FIELDS,
+        "time_range": json.dumps({"since": date_str, "until": date_str}),
+        "limit": 100,
+    }
+    if filtering:
+        params["filtering"] = json.dumps(filtering)
+
+    r = meta_request(
+        f"act_{META_ACCOUNT_ID}/insights",
+        params,
+    )
+    rows = r.get("data", [])
+    # Further filter: skip zero-spend and paused
+    return [row for row in rows if safe_float(row.get("spend", 0)) > 0]
+
+
+def fetch_meta_adsets(date_str: str, active_campaign_ids: list = None) -> list:
     """Ad-set-level insights for a single day."""
-    r = meta_request(
-        f"act_{META_ACCOUNT_ID}/insights",
-        {
-            "level": "adset",
-            "fields": META_FIELDS,
-            "time_range": json.dumps({"since": date_str, "until": date_str}),
-            "limit": 50,
-        },
-    )
-    return r.get("data", [])
+    params = {
+        "level": "adset",
+        "fields": META_FIELDS,
+        "time_range": json.dumps({"since": date_str, "until": date_str}),
+        "limit": 100,
+    }
+    if active_campaign_ids:
+        params["filtering"] = json.dumps([
+            {"field": "campaign.id", "operator": "IN", "value": active_campaign_ids}
+        ])
+    r = meta_request(f"act_{META_ACCOUNT_ID}/insights", params)
+    return [row for row in r.get("data", []) if safe_float(row.get("spend", 0)) > 0]
 
 
 def fetch_meta_7day(since_str: str, until_str: str) -> list:
@@ -246,6 +355,22 @@ def fetch_meta_7day(since_str: str, until_str: str) -> list:
         },
     )
     return r.get("data", [])
+
+
+def fetch_meta_campaigns_7day(since_str: str, until_str: str, active_ids: list = None) -> list:
+    """Campaign-level insights aggregated over 7-day window (for comparison)."""
+    params = {
+        "level": "campaign",
+        "fields": META_FIELDS,
+        "time_range": json.dumps({"since": since_str, "until": until_str}),
+        "limit": 100,
+    }
+    if active_ids:
+        params["filtering"] = json.dumps([
+            {"field": "campaign.id", "operator": "IN", "value": active_ids}
+        ])
+    r = meta_request(f"act_{META_ACCOUNT_ID}/insights", params)
+    return [row for row in r.get("data", []) if safe_float(row.get("spend", 0)) > 0]
 
 
 def extract_purchases(actions: list) -> int:
@@ -753,16 +878,36 @@ def build_product_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
 
 
 def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
-                        campaigns: list, adsets: list):
-    """Populate the 'Campaign Performance' tab."""
+                        campaigns: list, adsets: list, campaigns_7d: list = None):
+    """Populate the 'Campaign Performance' tab with yesterday + vs 7-day avg."""
     ws.clear()
+
+    # Build 7-day average per campaign for comparison
+    p7_by_id = {}
+    for c in (campaigns_7d or []):
+        cid = c.get("campaign_id", c.get("id", ""))
+        if cid not in p7_by_id:
+            p7_by_id[cid] = {"spend": [], "roas": [], "cpa": [], "ctr": []}
+        p7_by_id[cid]["spend"].append(safe_float(c.get("spend", 0)))
+        roas = extract_roas(c.get("purchase_roas"))
+        if roas is not None:
+            p7_by_id[cid]["roas"].append(roas)
+        cpa = extract_cpa(c.get("cost_per_action_type"))
+        if cpa is not None:
+            p7_by_id[cid]["cpa"].append(cpa)
+        p7_by_id[cid]["ctr"].append(safe_float(c.get("ctr", 0)))
+
+    def p7_avg(cid, key):
+        vals = p7_by_id.get(cid, {}).get(key, [])
+        return round(sum(vals) / len(vals), 2) if vals else None
 
     # ── Campaign section ──
     camp_headers = [
-        "Campaign", "Status", "Spend (₹)", "Impressions", "Reach",
-        "Clicks", "CTR (%)", "CPC (₹)", "CPM (₹)", "Purchases", "CPA (₹)", "ROAS",
+        "Campaign", "Spend (₹)", "Impressions", "Reach",
+        "Clicks", "CTR (%)", "CPC (₹)", "Purchases", "CPA (₹)", "ROAS",
+        "Spend vs 7d Avg %", "ROAS vs 7d Avg %",
     ]
-    ws.update("A1", [["━━━ CAMPAIGN LEVEL ━━━"] + [""] * (len(camp_headers) - 1)])
+    ws.update("A1", [["━━━ CAMPAIGN LEVEL — YESTERDAY vs 7-DAY AVG ━━━"] + [""] * (len(camp_headers) - 1)])
     ws.update("A2", [camp_headers])
 
     camp_data = []
@@ -770,22 +915,31 @@ def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
         spend = safe_float(c.get("spend", 0))
         if spend == 0:
             continue
+        cid = c.get("campaign_id", c.get("id", ""))
+        roas = extract_roas(c.get("purchase_roas"))
+        cpa_val = extract_cpa(c.get("cost_per_action_type"))
+
+        avg_spend = p7_avg(cid, "spend")
+        avg_roas  = p7_avg(cid, "roas")
+        spend_chg = round((spend - avg_spend) / avg_spend * 100, 1) if avg_spend else ""
+        roas_chg  = round((roas - avg_roas) / avg_roas * 100, 1) if (roas and avg_roas) else ""
+
         camp_data.append([
             c.get("campaign_name", c.get("name", "")),
-            c.get("effective_status", c.get("status", "")),
             round(spend, 2),
             int(safe_float(c.get("impressions", 0))),
             int(safe_float(c.get("reach", 0))),
             int(safe_float(c.get("clicks", 0))),
             safe_float(c.get("ctr", 0)),
             safe_float(c.get("cpc", 0)),
-            safe_float(c.get("cpm", 0)),
             extract_purchases(c.get("actions", [])),
-            extract_cpa(c.get("cost_per_action_type")) or "",
-            extract_roas(c.get("purchase_roas")) or "",
+            cpa_val or "",
+            roas or "",
+            spend_chg,
+            roas_chg,
         ])
 
-    camp_data.sort(key=lambda r: r[2], reverse=True)
+    camp_data.sort(key=lambda r: r[1], reverse=True)  # sort by spend desc
     if camp_data:
         ws.update("A3", camp_data)
 
@@ -794,7 +948,7 @@ def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
     # ── Ad set section ──
     adset_headers = [
         "Ad Set", "Status", "Spend (₹)", "Impressions", "Reach",
-        "Clicks", "CTR (%)", "CPC (₹)", "CPM (₹)", "Purchases", "CPA (₹)", "ROAS", "Learning Phase",
+        "Clicks", "CTR (%)", "CPC (₹)", "Purchases", "CPA (₹)", "ROAS",
     ]
     as_start = camp_end + 1
     ws.update(f"A{as_start}", [["━━━ AD SET LEVEL ━━━"] + [""] * (len(adset_headers) - 1)])
@@ -805,24 +959,18 @@ def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
         spend = safe_float(a.get("spend", 0))
         if spend == 0:
             continue
-        delivery = a.get("delivery", {})
-        substatuses = delivery.get("substatuses", []) if isinstance(delivery, dict) else []
-        learning = "In Learning" if "in_learning_phase" in substatuses else (
-                   "Learning Exit Fail" if "learning_exit_unsuccessfully" in substatuses else "")
         as_data.append([
             a.get("adset_name", a.get("name", "")),
-            a.get("effective_status", a.get("status", "")),
+            a.get("effective_status", a.get("status", "ACTIVE")),
             round(spend, 2),
             int(safe_float(a.get("impressions", 0))),
             int(safe_float(a.get("reach", 0))),
             int(safe_float(a.get("clicks", 0))),
             safe_float(a.get("ctr", 0)),
             safe_float(a.get("cpc", 0)),
-            safe_float(a.get("cpm", 0)),
             extract_purchases(a.get("actions", [])),
             extract_cpa(a.get("cost_per_action_type")) or "",
             extract_roas(a.get("purchase_roas")) or "",
-            learning,
         ])
 
     as_data.sort(key=lambda r: r[2], reverse=True)
@@ -832,6 +980,8 @@ def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
     as_end = as_start + 2 + len(as_data)
 
     # ── Format requests ──
+    # Camp headers: Campaign(0), Spend(1), Impr(2), Reach(3), Clicks(4),
+    #               CTR(5), CPC(6), Purchases(7), CPA(8), ROAS(9), SpendChg(10), ROASChg(11)
     requests_body = [
         cell_format(sheets_svc, spreadsheet_id, sheet_id, 0, 1, 0, len(camp_headers),
                     bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG, font_size=11),
@@ -846,28 +996,37 @@ def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
         freeze_request(sheet_id, rows=2),
         auto_resize_request(sheet_id, 0, len(adset_headers)),
     ]
-    # Currency / percentage formats for campaign rows
-    for col in [2, 7, 8, 10]:
+    # Currency formats for campaign rows: Spend(1), CPC(6), CPA(8)
+    for col in [1, 6, 8]:
         requests_body.append(
             cell_format(sheets_svc, spreadsheet_id, sheet_id,
                         2, camp_end, col, col + 1,
                         number_format='₹#,##0.00')
         )
+    # CTR % format col 5
     requests_body.append(
         cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                    2, camp_end, 6, 7,
+                    2, camp_end, 5, 6,
                     number_format='0.00"%"')
     )
-    # ROAS conditional formatting for campaigns
-    requests_body += conditional_format_roas(sheet_id, 2, camp_end, 11, 12)
-    # Currency / pct for adset rows
-    for col in [2, 7, 8, 10]:
+    # ROAS conditional formatting for campaigns (col 9)
+    requests_body += conditional_format_roas(sheet_id, 2, camp_end, 9, 10)
+    # Spend/ROAS change % conditional formatting (cols 10, 11)
+    requests_body += conditional_format_pct(sheet_id, 2, camp_end, 10, 12)
+
+    # Currency / pct for adset rows: Spend(2), CPC(7), CPA(9)
+    for col in [2, 7, 9]:
         requests_body.append(
             cell_format(sheets_svc, spreadsheet_id, sheet_id,
                         as_start + 1, as_end, col, col + 1,
                         number_format='₹#,##0.00')
         )
-    requests_body += conditional_format_roas(sheet_id, as_start + 1, as_end, 11, 12)
+    requests_body.append(
+        cell_format(sheets_svc, spreadsheet_id, sheet_id,
+                    as_start + 1, as_end, 6, 7,
+                    number_format='0.00"%"')
+    )
+    requests_body += conditional_format_roas(sheet_id, as_start + 1, as_end, 10, 11)
 
     sheets_svc.spreadsheets().batchUpdate(
         spreadsheetId=spreadsheet_id, body={"requests": requests_body}
@@ -1041,10 +1200,19 @@ TAB_NAMES = [
 
 def get_or_create_spreadsheet(gc: gspread.Client, name: str) -> gspread.Spreadsheet:
     try:
-        return gc.open(name)
+        ss = gc.open(name)
+        log.info("Opened existing spreadsheet: '%s' (%s)", name, ss.id)
+        return ss
     except gspread.SpreadsheetNotFound:
         ss = gc.create(name)
-        ss.share(GMAIL_TO, perm_type="user", role="writer")
+        log.info("Created new spreadsheet: '%s' (%s)", name, ss.id)
+        # Share with both the report recipient and the configured sheet email
+        for email in set(filter(None, [GMAIL_TO, GOOGLE_SHEET_EMAIL])):
+            try:
+                ss.share(email, perm_type="user", role="writer", notify_owner=False)
+                log.info("Shared sheet with %s", email)
+            except Exception as e:
+                log.warning("Could not share with %s: %s", email, e)
         return ss
 
 
@@ -1078,9 +1246,10 @@ def update_spreadsheet(date_str: str,
                         shopify_today: dict, shopify_7d: dict,
                         shopify_products_today: dict, shopify_products_7d: dict,
                         meta_campaigns: list, meta_adsets: list,
+                        meta_campaigns_7d: list,
                         recs: list, notes: list,
                         unavailable: list) -> str:
-    gc, sheets_svc, gmail_svc = get_google_clients()
+    gc, sheets_svc = get_sheets_clients()
     ss = get_or_create_spreadsheet(gc, SPREADSHEET_NAME)
     tab_map = ensure_tabs(ss)
 
@@ -1121,26 +1290,33 @@ def update_spreadsheet(date_str: str,
     }
 
     # ── Build each tab ──
+    log.info("Writing Shopify Daily Data tab...")
     build_shopify_daily_tab(
         tab_map["Shopify Daily Data"], sheets_svc, ss.id,
         sheet_ids["Shopify Daily Data"], shopify_today, seven_day_rows, seven_day_cols
     )
+    log.info("Writing Meta Ads Daily Data tab...")
     build_meta_daily_tab(
         tab_map["Meta Ads Daily Data"], sheets_svc, ss.id,
         sheet_ids["Meta Ads Daily Data"], meta_campaigns, []
     )
+    log.info("Writing Product Performance tab...")
     build_product_tab(
         tab_map["Product Performance"], sheets_svc, ss.id,
         sheet_ids["Product Performance"], shopify_products_today, shopify_products_7d
     )
+    log.info("Writing Campaign Performance tab...")
     build_campaign_tab(
         tab_map["Campaign Performance"], sheets_svc, ss.id,
-        sheet_ids["Campaign Performance"], meta_campaigns, meta_adsets
+        sheet_ids["Campaign Performance"], meta_campaigns, meta_adsets,
+        meta_campaigns_7d
     )
+    log.info("Writing Recommendations & Notes tab...")
     build_recommendations_tab(
         tab_map["Recommendations & Notes"], sheets_svc, ss.id,
         sheet_ids["Recommendations & Notes"], recs, notes, date_str, unavailable
     )
+    log.info("Writing Dashboard tab...")
     build_dashboard_tab(
         tab_map["Dashboard"], sheets_svc, ss.id,
         sheet_ids["Dashboard"], shopify_today, shopify_7d_avg,
@@ -1148,19 +1324,16 @@ def update_spreadsheet(date_str: str,
         sheet_ids["Shopify Daily Data"], sheet_ids["Meta Ads Daily Data"]
     )
 
-    return ss.url, gmail_svc, meta_summary, shopify_7d_avg
+    return ss.url, meta_summary, shopify_7d_avg
 
 
 # ─────────────────────── Email ─────────────────────────────────────────────────
 
-def send_or_draft_email(gmail_svc, sheet_url: str, date_str: str,
-                         shopify_today: dict, shopify_7d_avg: dict,
-                         meta_summary: dict, recs: list,
-                         urgent_issues: list):
-    """Send or create a draft email with the daily summary."""
-    import base64
-    from email.mime.text import MIMEText
-
+def build_html_email(sheet_url: str, date_str: str,
+                     shopify_today: dict, shopify_7d_avg: dict,
+                     meta_summary: dict, recs: list,
+                     urgent_issues: list) -> str:
+    """Build a rich HTML email body for the daily report."""
     s = shopify_today.get("sales", {})
     gs = safe_float(s.get("gross_sales", 0))
     ns = safe_float(s.get("net_sales", 0))
@@ -1168,64 +1341,169 @@ def send_or_draft_email(gmail_svc, sheet_url: str, date_str: str,
     ao = safe_float(s.get("average_order_value", 0))
     rt = abs(safe_float(s.get("returns", 0)))
 
+    sess_data = shopify_today.get("sessions", {})
+    sessions   = int(safe_float(sess_data.get("sessions", 0)))
+    conv_rate  = round(safe_float(sess_data.get("conversion_rate", 0)) * 100, 2)
+
     def fmt_inr(v): return f"₹{v:,.0f}"
-    def fmt_pct(v): return (f"+{v:.1f}%" if v >= 0 else f"{v:.1f}%") if v is not None else "—"
+    def fmt_pct(v):
+        return (f"+{v:.1f}%" if v >= 0 else f"{v:.1f}%") if v is not None else "—"
+    def chg_color(v):
+        if v is None: return "#666"
+        return "#2e7d32" if v >= 0 else "#c62828"
 
     ag_gs = shopify_7d_avg.get("gross_sales", 0)
     ag_ns = shopify_7d_avg.get("net_sales", 0)
     ag_od = shopify_7d_avg.get("orders", 0)
+    ag_ao = shopify_7d_avg.get("average_order_value", 0)
 
     sp   = meta_summary.get("spend", 0)
     pu   = meta_summary.get("purchases", 0)
     cpa  = meta_summary.get("cpa", 0)
     roas = meta_summary.get("roas", 0)
 
-    urgent_block = ""
+    urgent_html = ""
     if urgent_issues:
-        urgent_block = "\n🚨 URGENT ISSUES\n" + "\n".join(f"  • {i}" for i in urgent_issues) + "\n\n"
+        items = "".join(f"<li style='margin:4px 0'>{i}</li>" for i in urgent_issues[:3])
+        urgent_html = f"""
+<div style="background:#fff3cd;border-left:4px solid #ff6f00;padding:12px 16px;margin:16px 0;border-radius:4px">
+  <strong style="color:#e65100">🚨 URGENT ISSUES</strong>
+  <ul style="margin:8px 0 0;padding-left:20px;color:#333">{items}</ul>
+</div>"""
 
-    body = f"""\
-Hi Atul,
+    gs_chg = pct_change(gs, ag_gs)
+    ns_chg = pct_change(ns, ag_ns)
+    od_chg = pct_change(od, ag_od)
+    ao_chg = pct_change(ao, ag_ao)
 
-{urgent_block}Here is your daily performance summary for {date_str}.
+    recs_html = "".join(
+        f"<li style='margin:6px 0'>{r}</li>" for r in recs[:5]
+    )
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📦 SHOPIFY PERFORMANCE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Gross Sales:     {fmt_inr(gs)}   ({fmt_pct(pct_change(gs, ag_gs))} vs 7-day avg {fmt_inr(ag_gs)})
-  Net Sales:       {fmt_inr(ns)}   ({fmt_pct(pct_change(ns, ag_ns))} vs 7-day avg {fmt_inr(ag_ns)})
-  Orders:          {od}           ({fmt_pct(pct_change(od, ag_od))} vs 7-day avg {round(ag_od, 1)})
-  Avg Order Value: {fmt_inr(ao)}
-  Returns:         {fmt_inr(rt)}
+    sheet_btn = (
+        f'<a href="{sheet_url}" style="background:#1565c0;color:white;padding:10px 22px;'
+        f'text-decoration:none;border-radius:4px;display:inline-block;font-weight:bold;margin:12px 0">'
+        f'📊 View Full Dashboard</a>'
+    ) if sheet_url else ""
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📣 META ADS PERFORMANCE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Total Spend:     {fmt_inr(sp)}
-  Purchases:       {pu}
-  CPA:             {fmt_inr(cpa)}
-  Blended ROAS:    {roas:.2f}x
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;font-size:14px;color:#333;max-width:700px;margin:0 auto;padding:20px">
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ RECOMMENDED ACTIONS FOR TODAY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{chr(10).join(f"  {i+1}. {r}" for i, r in enumerate(recs[:5]))}
+<h1 style="color:#1a237e;border-bottom:3px solid #3f51b5;padding-bottom:10px;font-size:22px">
+  Dhirai Daily Performance Report<br>
+  <span style="font-size:15px;font-weight:normal;color:#555">{date_str}</span>
+</h1>
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Full Dashboard: {sheet_url}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{urgent_html}
 
-Best,
-Dhirai Daily Bot
-"""
+<h2 style="color:#1565c0;margin-top:24px">🛒 Shopify Performance</h2>
+<table style="border-collapse:collapse;width:100%;margin-bottom:12px">
+<tr style="background:#e3f2fd">
+  <th style="padding:8px 12px;text-align:left;border:1px solid #bbdefb">Metric</th>
+  <th style="padding:8px 12px;text-align:right;border:1px solid #bbdefb">Yesterday</th>
+  <th style="padding:8px 12px;text-align:right;border:1px solid #bbdefb">7-Day Avg</th>
+  <th style="padding:8px 12px;text-align:right;border:1px solid #bbdefb">Change</th>
+</tr>
+<tr>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Gross Sales</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;font-weight:bold">{fmt_inr(gs)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{fmt_inr(ag_gs)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;color:{chg_color(gs_chg)};font-weight:bold">{fmt_pct(gs_chg)}</td>
+</tr>
+<tr style="background:#fafafa">
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Net Sales</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;font-weight:bold">{fmt_inr(ns)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{fmt_inr(ag_ns)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;color:{chg_color(ns_chg)};font-weight:bold">{fmt_pct(ns_chg)}</td>
+</tr>
+<tr>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Orders</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;font-weight:bold">{od}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{round(ag_od,1)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;color:{chg_color(od_chg)};font-weight:bold">{fmt_pct(od_chg)}</td>
+</tr>
+<tr style="background:#fafafa">
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Avg Order Value</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;font-weight:bold">{fmt_inr(ao)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{fmt_inr(ag_ao)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;color:{chg_color(ao_chg)};font-weight:bold">{fmt_pct(ao_chg)}</td>
+</tr>
+<tr>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Returns</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{fmt_inr(rt)}</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">—</td>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0"></td>
+</tr>
+<tr style="background:#fafafa">
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Sessions</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{sessions:,}</td>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0"></td>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0"></td>
+</tr>
+<tr>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Conversion Rate</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{conv_rate:.2f}%</td>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0"></td>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0"></td>
+</tr>
+</table>
 
-    html_body = body.replace("\n", "<br>").replace("━", "─")
+<h2 style="color:#1565c0;margin-top:24px">📣 Meta Ads Performance</h2>
+<table style="border-collapse:collapse;width:100%;margin-bottom:12px">
+<tr style="background:#e3f2fd">
+  <th style="padding:8px 12px;text-align:left;border:1px solid #bbdefb">Metric</th>
+  <th style="padding:8px 12px;text-align:right;border:1px solid #bbdefb">Yesterday</th>
+</tr>
+<tr>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Total Spend</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;font-weight:bold">{fmt_inr(sp)}</td>
+</tr>
+<tr style="background:#fafafa">
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Purchases (attributed)</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;font-weight:bold">{pu}</td>
+</tr>
+<tr>
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Cost Per Purchase (CPA)</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0">{fmt_inr(cpa)}</td>
+</tr>
+<tr style="background:#fafafa">
+  <td style="padding:8px 12px;border:1px solid #e0e0e0">Blended ROAS</td>
+  <td style="padding:8px 12px;text-align:right;border:1px solid #e0e0e0;font-weight:bold;color:{'#2e7d32' if roas >= 2 else '#c62828'}">{roas:.2f}x</td>
+</tr>
+</table>
 
-    msg = MIMEText(html_body, "html")
+<h2 style="color:#1565c0;margin-top:24px">✅ Recommended Actions</h2>
+<ol style="line-height:1.9;padding-left:20px">{recs_html}</ol>
+
+{sheet_btn}
+
+<hr style="border:none;border-top:1px solid #e0e0e0;margin:24px 0">
+<p style="color:#9e9e9e;font-size:11px">
+  Auto-generated by Dhirai Daily Dashboard &bull;
+  {datetime.datetime.now(KOLKATA_TZ).strftime('%Y-%m-%d %H:%M IST')}
+</p>
+</body>
+</html>"""
+
+
+def send_or_draft_email(gmail_svc, sheet_url: str, date_str: str,
+                         shopify_today: dict, shopify_7d_avg: dict,
+                         meta_summary: dict, recs: list,
+                         urgent_issues: list):
+    """Send HTML email; fall back to draft on failure."""
+    html_body = build_html_email(
+        sheet_url, date_str, shopify_today, shopify_7d_avg,
+        meta_summary, recs, urgent_issues,
+    )
+
+    msg = MIMEMultipart("alternative")
     msg["To"]      = GMAIL_TO
     msg["Subject"] = f"Daily Store & Ads Performance Sheet - {date_str}"
     if GMAIL_CC:
         msg["Cc"] = GMAIL_CC
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
 
@@ -1233,121 +1511,158 @@ Dhirai Daily Bot
         gmail_svc.users().messages().send(
             userId="me", body={"raw": raw}
         ).execute()
-        print(f"✅ Email sent to {GMAIL_TO}")
+        log.info("Email sent to %s", GMAIL_TO)
     except HttpError as e:
-        # Fallback: create draft
-        print(f"⚠️  Send failed ({e}), creating draft instead...")
+        log.warning("Send failed (%s) — creating Gmail draft instead.", e)
         gmail_svc.users().drafts().create(
             userId="me", body={"message": {"raw": raw}}
         ).execute()
-        print("✅ Gmail draft created.")
+        log.info("Gmail draft created successfully.")
 
 
 # ─────────────────────── Main ──────────────────────────────────────────────────
 
 def main():
+    log.info("=" * 60)
+    log.info("Dhirai Daily Dashboard — Starting")
+    log.info("=" * 60)
+
     yesterday     = yesterday_kolkata()
-    seven_ago     = yesterday - datetime.timedelta(days=6)   # 7-day window starts here
+    # 7-day window: yesterday-7 to yesterday-1
+    seven_ago     = yesterday - datetime.timedelta(days=7)
+    prior_end     = yesterday - datetime.timedelta(days=1)
     date_str      = yesterday.isoformat()
     since_7d      = seven_ago.isoformat()
+    until_7d      = prior_end.isoformat()
     unavailable   = []
 
-    print(f"📅 Running dashboard for {date_str} (Asia/Kolkata)")
+    log.info("Report date: %s (Asia/Kolkata)", date_str)
+    log.info("7-day comparison window: %s to %s", since_7d, until_7d)
 
     # ── Fetch Shopify ──
-    print("🛒 Fetching Shopify data...")
+    log.info("--- Shopify: fetching daily data ---")
     try:
         shopify_today = fetch_shopify_daily(date_str)
     except Exception as e:
-        print(f"  ⚠️ Shopify daily fetch failed: {e}")
+        log.error("Shopify daily fetch failed: %s\n%s", e, traceback.format_exc())
         shopify_today = {"sales": {}, "sessions": {}, "top_products": {"rows": [], "columns": []}}
         unavailable.append(f"Shopify daily data unavailable: {e}")
 
     try:
-        shopify_7d = fetch_shopify_7day(since_7d, date_str)
+        shopify_7d = fetch_shopify_7day(since_7d, until_7d)
     except Exception as e:
-        print(f"  ⚠️ Shopify 7-day fetch failed: {e}")
+        log.error("Shopify 7-day fetch failed: %s", e)
         shopify_7d = {"rows": [], "columns": []}
         unavailable.append(f"Shopify 7-day data unavailable: {e}")
 
-    try:
-        shopify_prod_today = fetch_shopify_daily(date_str)["top_products"] if not unavailable else {"rows": [], "columns": []}
-    except Exception:
-        shopify_prod_today = {"rows": [], "columns": []}
+    shopify_prod_today = shopify_today.get("top_products", {"rows": [], "columns": []})
 
     try:
-        shopify_prod_7d = fetch_shopify_7day_products(since_7d, date_str)
+        shopify_prod_7d = fetch_shopify_7day_products(since_7d, until_7d)
     except Exception as e:
+        log.warning("Shopify 7-day product data failed: %s", e)
         shopify_prod_7d = {"rows": [], "columns": []}
         unavailable.append(f"Shopify 7-day product data unavailable: {e}")
 
     # ── Fetch Meta Ads ──
-    print("📣 Fetching Meta Ads data...")
-    try:
-        meta_campaigns = fetch_meta_campaigns(date_str)
-    except Exception as e:
-        print(f"  ⚠️ Meta campaign fetch failed: {e}")
-        meta_campaigns = []
-        unavailable.append(f"Meta campaign data unavailable: {e}")
+    log.info("--- Meta Ads: fetching data ---")
+    active_campaign_ids = []
+    meta_campaigns = []
+    meta_adsets = []
+    meta_campaigns_7d = []
 
-    try:
-        meta_adsets = fetch_meta_adsets(date_str)
-    except Exception as e:
-        print(f"  ⚠️ Meta ad set fetch failed: {e}")
-        meta_adsets = []
-        unavailable.append(f"Meta ad set data unavailable: {e}")
+    if not META_TOKEN:
+        log.warning("META_ACCESS_TOKEN not set — skipping Meta Ads.")
+        unavailable.append("Meta Ads data unavailable: META_ACCESS_TOKEN not configured.")
+    else:
+        try:
+            active_campaign_ids = fetch_meta_active_campaign_ids()
+        except Exception as e:
+            log.error("Meta: could not fetch active campaigns: %s", e)
+            unavailable.append(f"Meta active campaign IDs unavailable: {e}")
 
-    # ── Generate recommendations ──
-    print("💡 Generating recommendations...")
+        try:
+            meta_campaigns = fetch_meta_campaigns(date_str, active_campaign_ids)
+            log.info("Meta campaigns with spend yesterday: %d", len(meta_campaigns))
+        except Exception as e:
+            log.error("Meta campaign insights failed: %s\n%s", e, traceback.format_exc())
+            unavailable.append(f"Meta campaign data unavailable: {e}")
+
+        try:
+            meta_adsets = fetch_meta_adsets(date_str, active_campaign_ids)
+            log.info("Meta ad sets with spend yesterday: %d", len(meta_adsets))
+        except Exception as e:
+            log.warning("Meta ad set fetch failed: %s", e)
+            unavailable.append(f"Meta ad set data unavailable: {e}")
+
+        try:
+            meta_campaigns_7d = fetch_meta_campaigns_7day(since_7d, until_7d, active_campaign_ids)
+            log.info("Meta 7-day campaign rows: %d", len(meta_campaigns_7d))
+        except Exception as e:
+            log.warning("Meta 7-day campaign fetch failed: %s", e)
+            unavailable.append(f"Meta 7-day comparison data unavailable: {e}")
+
+    # ── Compute 7-day averages ──
+    log.info("--- Computing 7-day averages ---")
     seven_day_rows = shopify_7d.get("rows", [])
     seven_day_cols = shopify_7d.get("columns", [])
     col_idx = {c: i for i, c in enumerate(seven_day_cols)}
+    # Exclude yesterday's row from averages
     prev_rows = [r for r in seven_day_rows
                  if r and str(r[col_idx.get("day", 0)]) != date_str]
     shopify_7d_avg = compute_7day_averages(prev_rows, {
-        "gross_sales":         col_idx.get("gross_sales", 1),
-        "net_sales":           col_idx.get("net_sales", 2),
-        "orders":              col_idx.get("orders", 3),
-        "average_order_value": col_idx.get("average_order_value", 4),
+        "gross_sales":          col_idx.get("gross_sales", 1),
+        "net_sales":            col_idx.get("net_sales", 2),
+        "orders":               col_idx.get("orders", 3),
+        "average_order_value":  col_idx.get("average_order_value", 4),
     })
+    log.info("7-day avg net sales: %.2f, orders: %.1f",
+             shopify_7d_avg.get("net_sales", 0), shopify_7d_avg.get("orders", 0))
 
+    # ── Generate recommendations ──
+    log.info("--- Generating recommendations ---")
     recs, notes = generate_recommendations(
         shopify_today, shopify_7d_avg, meta_campaigns, meta_adsets
     )
     urgent = [r for r in recs if r.startswith("🚨")]
+    log.info("%d recommendations, %d urgent, %d notes.", len(recs), len(urgent), len(notes))
 
     # ── Update Google Sheet ──
-    print("📊 Updating Google Sheet...")
+    log.info("--- Google Sheets: updating ---")
+    sheet_url    = ""
+    meta_summary = {"spend": 0, "impressions": 0, "clicks": 0,
+                    "purchases": 0, "ctr": 0, "cpa": 0, "roas": 0}
+
     try:
-        sheet_url, gmail_svc, meta_summary, _ = update_spreadsheet(
+        sheet_url, meta_summary, _ = update_spreadsheet(
             date_str, shopify_today, shopify_7d,
             shopify_prod_today, shopify_prod_7d,
-            meta_campaigns, meta_adsets,
+            meta_campaigns, meta_adsets, meta_campaigns_7d,
             recs, notes, unavailable
         )
-        print(f"  ✅ Sheet updated: {sheet_url}")
+        log.info("Sheet updated: %s", sheet_url)
     except Exception as e:
-        print(f"  ⚠️ Sheet update failed: {e}")
-        sheet_url   = "https://docs.google.com/spreadsheets (configure credentials)"
-        meta_summary = {"spend": 0, "impressions": 0, "clicks": 0,
-                        "purchases": 0, "ctr": 0, "cpa": 0, "roas": 0}
-        try:
-            _, _, gmail_svc = get_google_clients()
-        except Exception as auth_err:
-            print(f"  ⚠️ Gmail auth also failed: {auth_err}")
-            return
+        log.error("Sheet update failed: %s\n%s", e, traceback.format_exc())
+        sheet_url = ""
 
     # ── Send / draft email ──
-    print("✉️  Sending email / creating draft...")
+    log.info("--- Gmail: sending daily report ---")
     try:
-        send_or_draft_email(
-            gmail_svc, sheet_url, date_str,
-            shopify_today, shopify_7d_avg, meta_summary, recs, urgent
-        )
+        gmail_svc = get_gmail_service()
+        if gmail_svc:
+            send_or_draft_email(
+                gmail_svc, sheet_url, date_str,
+                shopify_today, shopify_7d_avg, meta_summary, recs, urgent
+            )
+        else:
+            log.warning("Gmail service unavailable — no email sent.")
     except Exception as e:
-        print(f"  ⚠️ Email step failed: {e}")
+        log.error("Email step failed: %s\n%s", e, traceback.format_exc())
 
-    print("✅ Done.")
+    log.info("=" * 60)
+    log.info("Dhirai Daily Dashboard — Complete")
+    log.info("Sheet: %s", sheet_url)
+    log.info("=" * 60)
 
 
 if __name__ == "__main__":
