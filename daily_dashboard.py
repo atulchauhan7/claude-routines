@@ -561,26 +561,30 @@ def write_header_row(ws, row: list, row_idx: int = 0):
 
 def build_shopify_daily_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
                              today_data: dict, seven_day_rows: list, seven_day_cols: list):
-    """Populate the 'Shopify Daily Data' tab."""
-    ws.clear()
+    """Populate the 'Shopify Daily Data' tab — append new dates, never overwrite history."""
     headers = [
         "Date", "Gross Sales (₹)", "Net Sales (₹)", "Orders",
         "AOV (₹)", "Total Sales (₹)", "Discounts (₹)", "Returns (₹)",
         "Shipping (₹)", "Taxes (₹)", "Sessions", "Cart Adds",
         "Reached Checkout", "Completed Checkout", "Conversion Rate (%)",
     ]
-    ws.update("A1", [headers])
 
-    # Write 7-day historical rows
-    existing_dates = set()
-    all_data_rows = []
+    # Ensure header row exists
+    existing_header = ws.row_values(1)
+    if not existing_header:
+        ws.update("A1", [headers])
+
+    # Read existing dates in column A (skip header)
+    existing_dates = set(ws.col_values(1)[1:])
 
     col_idx = {c: i for i, c in enumerate(seven_day_cols)}
+    new_rows = []
     for row in seven_day_rows:
-        date_val = row[col_idx.get("day", 0)] if seven_day_cols else row[0]
-        existing_dates.add(str(date_val))
+        date_val = str(row[col_idx.get("day", 0)] if seven_day_cols else row[0])
+        if date_val in existing_dates:
+            continue   # already recorded — skip
         data_row = [
-            str(date_val),
+            date_val,
             safe_float(row[col_idx.get("gross_sales", 1)]),
             safe_float(row[col_idx.get("net_sales", 2)]),
             int(safe_float(row[col_idx.get("orders", 3)])),
@@ -590,14 +594,18 @@ def build_shopify_daily_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
             abs(safe_float(row[col_idx.get("returns", 7)])),
             safe_float(row[col_idx.get("shipping_charges", 8)]),
             safe_float(row[col_idx.get("taxes", 9)]),
-            "", "", "", "", "",   # sessions cols TBD
+            "", "", "", "", "",   # sessions columns — populated from sessions query separately
         ]
-        all_data_rows.append(data_row)
+        new_rows.append(data_row)
+        existing_dates.add(date_val)
 
-    if all_data_rows:
-        ws.update(f"A2", all_data_rows)
+    if new_rows:
+        next_row = len(existing_dates) - len(new_rows) + 2   # after existing data
+        all_existing = ws.col_values(1)[1:]
+        next_row = len(all_existing) + 2
+        ws.update(f"A{next_row}", new_rows)
 
-    total_rows = len(all_data_rows) + 2   # +1 header +1 for next append
+    total_rows = len(existing_dates) + 2
 
     # Format
     requests_body = [
@@ -901,7 +909,8 @@ def build_recommendations_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int
 
 def build_dashboard_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
                          shopify_today: dict, shopify_7d_avg: dict,
-                         meta_summary: dict, recs: list, date_str: str,
+                         meta_summary: dict, meta_7d_avg: dict,
+                         recs: list, date_str: str,
                          shopify_tab_id: int, meta_tab_id: int):
     """Populate the 'Dashboard' tab with executive summary and key metrics."""
     ws.clear()
@@ -934,6 +943,14 @@ def build_dashboard_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
     cpa = meta_summary.get("cpa", 0)
     ro  = meta_summary.get("roas", 0)
 
+    ag_sp  = meta_7d_avg.get("spend", 0)
+    ag_imp = meta_7d_avg.get("impressions", 0)
+    ag_cl  = meta_7d_avg.get("clicks", 0)
+    ag_pu  = meta_7d_avg.get("purchases", 0)
+    ag_ctr = meta_7d_avg.get("ctr", 0)
+    ag_cpa = meta_7d_avg.get("cpa", 0)
+    ag_ro  = meta_7d_avg.get("roas", 0)
+
     rows = [
         [f"DAILY STORE & ADS PERFORMANCE — {date_str}", "", "", ""],
         ["", "", "", ""],
@@ -946,14 +963,14 @@ def build_dashboard_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
         ["Returns", fmt_inr(rt), "", ""],
         ["", "", "", ""],
         ["━━━ META ADS PERFORMANCE ━━━", "", "", ""],
-        ["Metric", "Yesterday", "", ""],
-        ["Total Spend", fmt_inr(sp), "", ""],
-        ["Impressions", f"{imp:,}", "", ""],
-        ["Clicks", f"{cl:,}", "", ""],
-        ["CTR", f"{ctr:.2f}%", "", ""],
-        ["Purchases (attributed)", str(pu), "", ""],
-        ["CPA", fmt_inr(cpa), "", ""],
-        ["Blended ROAS", f"{ro:.2f}x", "", ""],
+        ["Metric", "Yesterday", "7-Day Avg", "Change vs Avg"],
+        ["Total Spend", fmt_inr(sp), fmt_inr(ag_sp), fmt_pct(pct_change(sp, ag_sp))],
+        ["Impressions", f"{imp:,}", f"{ag_imp:,.0f}", fmt_pct(pct_change(imp, ag_imp))],
+        ["Clicks", f"{cl:,}", f"{ag_cl:,.0f}", fmt_pct(pct_change(cl, ag_cl))],
+        ["CTR", f"{ctr:.2f}%", f"{ag_ctr:.2f}%", fmt_pct(pct_change(ctr, ag_ctr))],
+        ["Purchases (attributed)", str(pu), str(round(ag_pu, 1)), fmt_pct(pct_change(pu, ag_pu))],
+        ["CPA", fmt_inr(cpa), fmt_inr(ag_cpa), fmt_pct(pct_change(cpa, ag_cpa))],
+        ["Blended ROAS", f"{ro:.2f}x", f"{ag_ro:.2f}x", fmt_pct(pct_change(ro, ag_ro))],
         ["", "", "", ""],
         ["━━━ KEY WINS ━━━", "", "", ""],
     ]
@@ -982,22 +999,24 @@ def build_dashboard_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
 
     ws.update("A1", rows)
 
+    n = len(rows)
     requests_body = [
         # Title row
         cell_format(sheets_svc, spreadsheet_id, sheet_id, 0, 1, 0, 4,
                     bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG, font_size=14),
-        # Section headers
     ]
 
-    section_rows = [2, 10, 20, 22, 25, 27]  # approximate; adjust if row count changes
+    # Section header rows (0-indexed): Shopify=2, Meta=10, Wins=20, Issues, Actions
+    section_rows = [2, 10, 20]
     for sr in section_rows:
-        requests_body.append(
-            cell_format(sheets_svc, spreadsheet_id, sheet_id, sr, sr + 1, 0, 4,
-                        bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG, font_size=11)
-        )
+        if sr < n:
+            requests_body.append(
+                cell_format(sheets_svc, spreadsheet_id, sheet_id, sr, sr + 1, 0, 4,
+                            bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG, font_size=11)
+            )
 
     requests_body += [
-        # Sub-header rows for tables
+        # Column header rows for tables
         cell_format(sheets_svc, spreadsheet_id, sheet_id, 3, 4, 0, 4,
                     bold=True, bg_color=C_SECTION_BG),
         cell_format(sheets_svc, spreadsheet_id, sheet_id, 11, 12, 0, 4,
@@ -1006,8 +1025,11 @@ def build_dashboard_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
         auto_resize_request(sheet_id, 0, 4),
     ]
 
-    # Conditional formatting for change column (D, col index 3)
+    # Conditional formatting for change column (D, col index 3): Shopify rows 4-8, Meta rows 12-18
     requests_body += conditional_format_pct(sheet_id, 4, 9, 3, 4)
+    requests_body += conditional_format_pct(sheet_id, 12, 19, 3, 4)
+    # CPA change: lower is better — invert by adding a separate rule set
+    # (handled by the generic pct rules above; CPA going up is red which is correct)
 
     sheets_svc.spreadsheets().batchUpdate(
         spreadsheetId=spreadsheet_id, body={"requests": requests_body}
@@ -1065,6 +1087,7 @@ def update_spreadsheet(date_str: str,
                         shopify_today: dict, shopify_7d: dict,
                         shopify_products_today: dict, shopify_products_7d: dict,
                         meta_campaigns: list, meta_adsets: list,
+                        meta_7d_daily: list,
                         recs: list, notes: list,
                         unavailable: list) -> str:
     gc, sheets_svc, gmail_svc = get_google_clients()
@@ -1073,12 +1096,10 @@ def update_spreadsheet(date_str: str,
 
     sheet_ids = {ws.title: ws.id for ws in ss.worksheets()}
 
-    # Compute 7-day averages from Shopify data
+    # ── Shopify 7-day averages ──
     seven_day_rows = shopify_7d.get("rows", [])
     seven_day_cols = shopify_7d.get("columns", [])
     col_idx = {c: i for i, c in enumerate(seven_day_cols)}
-
-    # Exclude today's row if it's in the 7-day window
     prev_rows = [r for r in seven_day_rows if str(r[col_idx.get("day", 0)]) != date_str]
     shopify_7d_avg = compute_7day_averages(prev_rows, {
         "gross_sales":        col_idx.get("gross_sales", 1),
@@ -1087,7 +1108,7 @@ def update_spreadsheet(date_str: str,
         "average_order_value": col_idx.get("average_order_value", 4),
     })
 
-    # Aggregate Meta summary for dashboard
+    # ── Meta today summary ──
     total_spend  = sum(safe_float(c.get("spend", 0)) for c in meta_campaigns)
     total_impr   = sum(int(safe_float(c.get("impressions", 0))) for c in meta_campaigns)
     total_clicks = sum(int(safe_float(c.get("clicks", 0))) for c in meta_campaigns)
@@ -1106,6 +1127,30 @@ def update_spreadsheet(date_str: str,
         "cpa": total_cpa,
         "roas": blended_roas,
     }
+
+    # ── Meta 7-day averages (from daily breakdown rows) ──
+    if meta_7d_daily:
+        n7 = len(meta_7d_daily)
+        def _meta_avg(field):
+            vals = [safe_float(d.get(field, 0)) for d in meta_7d_daily]
+            return round(sum(vals) / n7, 2) if n7 else 0
+
+        m7_spend = _meta_avg("spend")
+        m7_impr  = _meta_avg("impressions")
+        m7_click = _meta_avg("clicks")
+        m7_purch_list = [extract_purchases(d.get("actions", [])) for d in meta_7d_daily]
+        m7_purch = round(avg(m7_purch_list), 1)
+        m7_ctr   = round(m7_click / m7_impr * 100, 2) if m7_impr else 0
+        m7_cpa   = round(m7_spend / m7_purch, 2) if m7_purch else 0
+        m7_roas_list = [extract_roas(d.get("purchase_roas")) for d in meta_7d_daily
+                        if extract_roas(d.get("purchase_roas")) is not None]
+        m7_roas = round(avg(m7_roas_list), 2) if m7_roas_list else 0
+        meta_7d_avg = {
+            "spend": m7_spend, "impressions": m7_impr, "clicks": m7_click,
+            "purchases": m7_purch, "ctr": m7_ctr, "cpa": m7_cpa, "roas": m7_roas,
+        }
+    else:
+        meta_7d_avg = {k: 0 for k in ("spend","impressions","clicks","purchases","ctr","cpa","roas")}
 
     # ── Build each tab ──
     build_shopify_daily_tab(
@@ -1131,19 +1176,19 @@ def update_spreadsheet(date_str: str,
     build_dashboard_tab(
         tab_map["Dashboard"], sheets_svc, ss.id,
         sheet_ids["Dashboard"], shopify_today, shopify_7d_avg,
-        meta_summary, recs, date_str,
+        meta_summary, meta_7d_avg, recs, date_str,
         sheet_ids["Shopify Daily Data"], sheet_ids["Meta Ads Daily Data"]
     )
 
-    return ss.url, gmail_svc, meta_summary, shopify_7d_avg
+    return ss.url, gmail_svc, meta_summary, shopify_7d_avg, meta_7d_avg
 
 
 # ─────────────────────── Email ─────────────────────────────────────────────────
 
 def send_or_draft_email(gmail_svc, sheet_url: str, date_str: str,
                          shopify_today: dict, shopify_7d_avg: dict,
-                         meta_summary: dict, recs: list,
-                         urgent_issues: list):
+                         meta_summary: dict, meta_7d_avg: dict,
+                         recs: list, urgent_issues: list):
     """Send or create a draft email with the daily summary."""
     import base64
     from email.mime.text import MIMEText
@@ -1166,6 +1211,12 @@ def send_or_draft_email(gmail_svc, sheet_url: str, date_str: str,
     pu   = meta_summary.get("purchases", 0)
     cpa  = meta_summary.get("cpa", 0)
     roas = meta_summary.get("roas", 0)
+    m_ctr = meta_summary.get("ctr", 0)
+
+    ag_sp   = meta_7d_avg.get("spend", 0)
+    ag_pu   = meta_7d_avg.get("purchases", 0)
+    ag_cpa  = meta_7d_avg.get("cpa", 0)
+    ag_roas = meta_7d_avg.get("roas", 0)
 
     urgent_block = ""
     if urgent_issues:
@@ -1188,10 +1239,11 @@ Hi Atul,
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📣 META ADS PERFORMANCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Total Spend:     {fmt_inr(sp)}
-  Purchases:       {pu}
-  CPA:             {fmt_inr(cpa)}
-  Blended ROAS:    {roas:.2f}x
+  Total Spend:     {fmt_inr(sp)}   ({fmt_pct(pct_change(sp, ag_sp))} vs 7-day avg {fmt_inr(ag_sp)})
+  Purchases:       {pu}           ({fmt_pct(pct_change(pu, ag_pu))} vs 7-day avg {round(ag_pu,1)})
+  CPA:             {fmt_inr(cpa)} ({fmt_pct(pct_change(cpa, ag_cpa))} vs 7-day avg {fmt_inr(ag_cpa)})
+  Blended ROAS:    {roas:.2f}x    ({fmt_pct(pct_change(roas, ag_roas))} vs 7-day avg {ag_roas:.2f}x)
+  CTR:             {m_ctr:.2f}%
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ RECOMMENDED ACTIONS FOR TODAY
@@ -1284,6 +1336,13 @@ def main():
         meta_adsets = []
         unavailable.append(f"Meta ad set data unavailable: {e}")
 
+    try:
+        meta_7d_daily = fetch_meta_7day(since_7d, (yesterday - datetime.timedelta(days=1)).isoformat())
+    except Exception as e:
+        print(f"  ⚠️ Meta 7-day fetch failed: {e}")
+        meta_7d_daily = []
+        unavailable.append(f"Meta 7-day comparison data unavailable: {e}")
+
     # ── Generate recommendations ──
     print("💡 Generating recommendations...")
     seven_day_rows = shopify_7d.get("rows", [])
@@ -1306,10 +1365,10 @@ def main():
     # ── Update Google Sheet ──
     print("📊 Updating Google Sheet...")
     try:
-        sheet_url, gmail_svc, meta_summary, _ = update_spreadsheet(
+        sheet_url, gmail_svc, meta_summary, _, meta_7d_avg = update_spreadsheet(
             date_str, shopify_today, shopify_7d,
             shopify_prod_today, shopify_prod_7d,
-            meta_campaigns, meta_adsets,
+            meta_campaigns, meta_adsets, meta_7d_daily,
             recs, notes, unavailable
         )
         print(f"  ✅ Sheet updated: {sheet_url}")
@@ -1318,6 +1377,7 @@ def main():
         sheet_url   = "https://docs.google.com/spreadsheets (configure credentials)"
         meta_summary = {"spend": 0, "impressions": 0, "clicks": 0,
                         "purchases": 0, "ctr": 0, "cpa": 0, "roas": 0}
+        meta_7d_avg = {k: 0 for k in ("spend","impressions","clicks","purchases","ctr","cpa","roas")}
         try:
             _, _, gmail_svc = get_google_clients()
         except Exception as auth_err:
@@ -1329,7 +1389,7 @@ def main():
     try:
         send_or_draft_email(
             gmail_svc, sheet_url, date_str,
-            shopify_today, shopify_7d_avg, meta_summary, recs, urgent
+            shopify_today, shopify_7d_avg, meta_summary, meta_7d_avg, recs, urgent
         )
     except Exception as e:
         print(f"  ⚠️ Email step failed: {e}")
