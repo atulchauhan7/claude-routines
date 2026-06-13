@@ -23,7 +23,6 @@ Environment variables (set in .env or system):
 import os
 import json
 import datetime
-import re
 import requests
 import gspread
 from google.oauth2.service_account import Credentials
@@ -38,6 +37,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.compose",
+    "https://www.googleapis.com/auth/drive.file",
 ]
 
 SHOPIFY_DOMAIN    = os.environ.get("SHOPIFY_STORE_DOMAIN", "36dhns-ed.myshopify.com")
@@ -49,16 +49,16 @@ GMAIL_TO          = os.environ.get("GMAIL_TO", "atul012001@gmail.com")
 GMAIL_CC          = os.environ.get("GMAIL_CC", "")
 SPREADSHEET_NAME  = os.environ.get("SPREADSHEET_NAME", "Daily Store & Ads Performance Sheet")
 
-# ─────────────────────── Colours (hex without #) ──────────────────────────────
+# ─────────────────────── Colours ──────────────────────────────────────────────
 
-C_HEADER_BG   = {"red": 0.133, "green": 0.133, "blue": 0.133}   # Dark charcoal
-C_HEADER_FG   = {"red": 1,     "green": 1,     "blue": 1}        # White
-C_SECTION_BG  = {"red": 0.957, "green": 0.957, "blue": 0.957}    # Light grey
-C_GREEN       = {"red": 0.204, "green": 0.659, "blue": 0.325}    # +ve change
-C_RED         = {"red": 0.839, "green": 0.153, "blue": 0.157}    # -ve change
-C_YELLOW      = {"red": 1,     "green": 0.898, "blue": 0.2}      # Warning
-C_ORANGE      = {"red": 1,     "green": 0.596, "blue": 0}        # Alert
-C_ACCENT      = {"red": 0.259, "green": 0.522, "blue": 0.957}    # Brand blue
+C_HEADER_BG   = {"red": 0.102, "green": 0.227, "blue": 0.420}  # Brand navy
+C_HEADER_FG   = {"red": 1,     "green": 1,     "blue": 1}
+C_SECTION_BG  = {"red": 0.906, "green": 0.922, "blue": 0.957}  # Light blue-grey
+C_GREEN       = {"red": 0.204, "green": 0.659, "blue": 0.325}
+C_RED         = {"red": 0.839, "green": 0.153, "blue": 0.157}
+C_YELLOW      = {"red": 1,     "green": 0.898, "blue": 0.2}
+C_ORANGE      = {"red": 1,     "green": 0.596, "blue": 0}
+C_ACCENT      = {"red": 0.259, "green": 0.522, "blue": 0.957}
 C_WHITE       = {"red": 1,     "green": 1,     "blue": 1}
 
 # ─────────────────────── Google Auth ──────────────────────────────────────────
@@ -72,21 +72,14 @@ def get_google_clients():
 
 # ─────────────────────── Date helpers ─────────────────────────────────────────
 
-def yesterday_kolkata():
-    now = datetime.datetime.now(KOLKATA_TZ)
-    yesterday = now.date() - datetime.timedelta(days=1)
-    return yesterday
-
-def seven_days_ago_kolkata():
-    now = datetime.datetime.now(KOLKATA_TZ)
-    return now.date() - datetime.timedelta(days=8)   # 7 days before yesterday
+def yesterday_kolkata() -> datetime.date:
+    return datetime.datetime.now(KOLKATA_TZ).date() - datetime.timedelta(days=1)
 
 # ─────────────────────── Shopify data fetching ────────────────────────────────
 
 SHOPIFY_GRAPHQL_URL = f"https://{SHOPIFY_DOMAIN}/admin/api/2024-01/graphql.json"
 
 def shopify_analytics(shopify_query: str) -> dict:
-    """Run a ShopifyQL analytics query and return rows + columns."""
     gql = """
     query RunAnalytics($query: String!) {
         shopifyqlQuery(query: $query) {
@@ -122,10 +115,8 @@ def shopify_analytics(shopify_query: str) -> dict:
 
 
 def fetch_shopify_daily(date_str: str) -> dict:
-    """Fetch all key Shopify metrics for a single day."""
     results = {}
 
-    # ── Sales summary ──
     q = (
         f"FROM sales SHOW gross_sales, net_sales, orders, average_order_value, "
         f"total_sales, discounts, returns, shipping_charges, taxes "
@@ -134,51 +125,49 @@ def fetch_shopify_daily(date_str: str) -> dict:
     r = shopify_analytics(q)
     if r["rows"]:
         row = r["rows"][0]
-        cols = r["columns"]
-        results["sales"] = dict(zip(cols, row))
+        results["sales"] = dict(zip(r["columns"], row))
     else:
         results["sales"] = {c: None for c in [
             "gross_sales","net_sales","orders","average_order_value",
             "total_sales","discounts","returns","shipping_charges","taxes"
         ]}
 
-    # ── Sessions / conversion ──
     q = (
         f"FROM sessions SHOW sessions, sessions_with_cart_additions, "
         f"sessions_that_reached_checkout, sessions_that_completed_checkout, "
         f"conversion_rate SINCE {date_str} UNTIL {date_str}"
     )
     r = shopify_analytics(q)
-    if r["rows"]:
-        row = r["rows"][0]
-        results["sessions"] = dict(zip(r["columns"], row))
-    else:
-        results["sessions"] = {}
+    results["sessions"] = dict(zip(r["columns"], r["rows"][0])) if r["rows"] else {}
 
-    # ── Top 10 products by gross sales ──
     q = (
         f"FROM sales SHOW gross_sales, net_sales, orders, total_sales "
         f"GROUP BY product_title ORDER BY gross_sales DESC LIMIT 10 "
         f"SINCE {date_str} UNTIL {date_str}"
     )
-    r = shopify_analytics(q)
-    results["top_products"] = r
+    results["top_products"] = shopify_analytics(q)
 
     return results
 
 
-def fetch_shopify_7day(since_str: str, until_str: str) -> dict:
-    """Fetch daily sales rows for 7-day window."""
-    q = (
+def fetch_shopify_8day_timeseries(since_str: str, until_str: str) -> dict:
+    """Daily sales + sessions timeseries for 8-day window (7 prior + yesterday)."""
+    sales_q = (
         f"FROM sales SHOW gross_sales, net_sales, orders, average_order_value, "
         f"total_sales, discounts, returns, shipping_charges, taxes "
         f"TIMESERIES day SINCE {since_str} UNTIL {until_str}"
     )
-    return shopify_analytics(q)
+    sessions_q = (
+        f"FROM sessions SHOW sessions, sessions_with_cart_additions, "
+        f"sessions_that_reached_checkout, sessions_that_completed_checkout, conversion_rate "
+        f"TIMESERIES day SINCE {since_str} UNTIL {until_str}"
+    )
+    sales    = shopify_analytics(sales_q)
+    sessions = shopify_analytics(sessions_q)
+    return {"sales": sales, "sessions": sessions}
 
 
 def fetch_shopify_7day_products(since_str: str, until_str: str) -> dict:
-    """Top 10 products over the 7-day window."""
     q = (
         f"FROM sales SHOW gross_sales, net_sales, orders "
         f"GROUP BY product_title ORDER BY gross_sales DESC LIMIT 10 "
@@ -189,14 +178,14 @@ def fetch_shopify_7day_products(since_str: str, until_str: str) -> dict:
 
 # ─────────────────────── Meta Ads data fetching ────────────────────────────────
 
-META_BASE = "https://graph.facebook.com/v19.0"
-
+META_BASE   = "https://graph.facebook.com/v19.0"
 META_FIELDS = (
-    "campaign_id,campaign_name,adset_id,adset_name,"
+    "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,"
     "spend,impressions,reach,clicks,ctr,cpc,cpm,"
-    "purchase_roas,actions,cost_per_action_type,"
+    "purchase_roas,actions,cost_per_action_type,frequency,"
     "date_start,date_stop"
 )
+
 
 def meta_request(endpoint: str, params: dict) -> dict:
     params["access_token"] = META_TOKEN
@@ -205,41 +194,26 @@ def meta_request(endpoint: str, params: dict) -> dict:
     return r.json()
 
 
-def fetch_meta_campaigns(date_str: str) -> list:
-    """Campaign-level insights for a single day."""
+def fetch_meta_level(date_str: str, level: str) -> list:
     r = meta_request(
         f"act_{META_ACCOUNT_ID}/insights",
         {
-            "level": "campaign",
+            "level": level,
             "fields": META_FIELDS,
             "time_range": json.dumps({"since": date_str, "until": date_str}),
-            "limit": 50,
-        },
-    )
-    return r.get("data", [])
-
-
-def fetch_meta_adsets(date_str: str) -> list:
-    """Ad-set-level insights for a single day."""
-    r = meta_request(
-        f"act_{META_ACCOUNT_ID}/insights",
-        {
-            "level": "adset",
-            "fields": META_FIELDS,
-            "time_range": json.dumps({"since": date_str, "until": date_str}),
-            "limit": 50,
+            "limit": 100,
         },
     )
     return r.get("data", [])
 
 
 def fetch_meta_7day(since_str: str, until_str: str) -> list:
-    """Account-level daily insights for the 7-day window."""
+    """Account-level daily insights for the 7-day prior window."""
     r = meta_request(
         f"act_{META_ACCOUNT_ID}/insights",
         {
             "level": "account",
-            "fields": "spend,impressions,reach,clicks,ctr,cpc,cpm,purchase_roas,actions,cost_per_action_type",
+            "fields": "spend,impressions,reach,clicks,ctr,cpc,cpm,purchase_roas,actions,cost_per_action_type,date_start",
             "time_range": json.dumps({"since": since_str, "until": until_str}),
             "time_increment": 1,
             "limit": 50,
@@ -249,10 +223,11 @@ def fetch_meta_7day(since_str: str, until_str: str) -> list:
 
 
 def extract_purchases(actions: list) -> int:
-    """Sum purchase action values from Meta actions list."""
     count = 0
     for a in (actions or []):
-        if a.get("action_type") in ("offsite_conversion.fb_pixel_purchase", "purchase"):
+        if a.get("action_type") in (
+            "offsite_conversion.fb_pixel_purchase", "purchase", "omni_purchase"
+        ):
             try:
                 count += int(float(a.get("value", 0)))
             except (ValueError, TypeError):
@@ -260,12 +235,15 @@ def extract_purchases(actions: list) -> int:
     return count
 
 
-def extract_roas(purchase_roas: list | None) -> float | None:
-    """Extract numeric ROAS from Meta's purchase_roas field."""
+def extract_roas(purchase_roas) -> float | None:
     if not purchase_roas:
         return None
-    for r in purchase_roas:
-        if r.get("action_type") in ("offsite_conversion.fb_pixel_purchase", "omni_purchase"):
+    if isinstance(purchase_roas, (int, float)):
+        return round(float(purchase_roas), 2)
+    for r in (purchase_roas if isinstance(purchase_roas, list) else []):
+        if r.get("action_type") in (
+            "offsite_conversion.fb_pixel_purchase", "omni_purchase", "purchase"
+        ):
             try:
                 return round(float(r["value"]), 2)
             except (ValueError, KeyError):
@@ -273,10 +251,11 @@ def extract_roas(purchase_roas: list | None) -> float | None:
     return None
 
 
-def extract_cpa(cost_per_action_type: list | None) -> float | None:
-    """Extract CPA (cost per purchase) from Meta's cost_per_action_type."""
+def extract_cpa(cost_per_action_type) -> float | None:
     for a in (cost_per_action_type or []):
-        if a.get("action_type") in ("offsite_conversion.fb_pixel_purchase", "purchase"):
+        if a.get("action_type") in (
+            "offsite_conversion.fb_pixel_purchase", "purchase", "omni_purchase"
+        ):
             try:
                 return round(float(a["value"]), 2)
             except (ValueError, KeyError):
@@ -288,7 +267,8 @@ def extract_cpa(cost_per_action_type: list | None) -> float | None:
 
 def safe_float(v) -> float:
     try:
-        return float(str(v).replace(",", "").replace("₹", "").replace(" INR", "").strip())
+        s = str(v).replace(",", "").replace("₹", "").replace(" INR", "").strip()
+        return float(s)
     except (ValueError, TypeError):
         return 0.0
 
@@ -304,10 +284,9 @@ def avg(values: list) -> float:
     return sum(vals) / len(vals) if vals else 0.0
 
 
-def compute_7day_averages(daily_rows: list, col_map: dict) -> dict:
-    """Compute column averages from daily rows (list of lists)."""
+def compute_7day_averages(daily_rows: list, col_idx: dict) -> dict:
     avgs = {}
-    for col, idx in col_map.items():
+    for col, idx in col_idx.items():
         vals = []
         for row in daily_rows:
             try:
@@ -318,90 +297,119 @@ def compute_7day_averages(daily_rows: list, col_map: dict) -> dict:
     return avgs
 
 
+def spend_weighted_roas(campaigns: list) -> float:
+    total_revenue = 0.0
+    total_spend   = 0.0
+    for c in campaigns:
+        spend = safe_float(c.get("spend", 0))
+        roas  = extract_roas(c.get("purchase_roas"))
+        if roas is not None and spend > 0:
+            total_revenue += roas * spend
+            total_spend   += spend
+    return round(total_revenue / total_spend, 2) if total_spend > 0 else 0.0
+
+
+def aggregate_meta_campaigns(campaigns: list) -> dict:
+    total_spend  = sum(safe_float(c.get("spend", 0)) for c in campaigns)
+    total_impr   = sum(int(safe_float(c.get("impressions", 0))) for c in campaigns)
+    total_reach  = sum(int(safe_float(c.get("reach", 0))) for c in campaigns)
+    total_clicks = sum(int(safe_float(c.get("clicks", 0))) for c in campaigns)
+    total_purch  = sum(extract_purchases(c.get("actions", [])) for c in campaigns)
+    ctr  = round(total_clicks / total_impr * 100, 2) if total_impr else 0
+    cpc  = round(total_spend  / total_clicks, 2)     if total_clicks else 0
+    cpm  = round(total_spend  / total_impr * 1000, 2) if total_impr else 0
+    cpa  = round(total_spend  / total_purch, 2)      if total_purch else 0
+    roas = spend_weighted_roas(campaigns)
+    return {
+        "spend": round(total_spend, 2), "impressions": total_impr,
+        "reach": total_reach, "clicks": total_clicks, "ctr": ctr,
+        "cpc": cpc, "cpm": cpm, "purchases": total_purch, "cpa": cpa, "roas": roas,
+    }
+
+
 # ─────────────────────── Recommendations engine ────────────────────────────────
 
 def generate_recommendations(shopify_today: dict, shopify_7d_avg: dict,
-                              meta_campaigns: list, meta_adsets: list,
-                              anomalies: list | None = None) -> list:
-    recs = []
+                              meta_campaigns: list) -> tuple[list, list]:
+    recs  = []
     notes = []
 
-    # ── Shopify insights ──
-    gross = safe_float(shopify_today.get("sales", {}).get("gross_sales", 0))
-    avg_gross = shopify_7d_avg.get("gross_sales", 0)
-    if avg_gross > 0:
-        chg = pct_change(gross, avg_gross)
-        if chg is not None and chg < -15:
-            recs.append(f"⚠️ Revenue dropped {abs(chg):.1f}% vs 7-day avg — check ad delivery, site issues, or seasonal demand.")
-        elif chg is not None and chg > 20:
-            recs.append(f"✅ Revenue up {chg:.1f}% vs 7-day avg — identify top-performing campaigns and scale budgets.")
+    s     = shopify_today.get("sales", {})
+    gross = safe_float(s.get("gross_sales", 0))
+    orders = safe_float(s.get("orders", 0))
+    rt    = abs(safe_float(s.get("returns", 0)))
 
-    orders = safe_float(shopify_today.get("sales", {}).get("orders", 0))
-    avg_orders = shopify_7d_avg.get("orders", 0)
-    if avg_orders > 0 and orders < avg_orders * 0.8:
+    ag_gs = shopify_7d_avg.get("gross_sales", 0)
+    ag_od = shopify_7d_avg.get("orders", 0)
+
+    if ag_gs > 0:
+        chg = pct_change(gross, ag_gs)
+        if chg is not None and chg < -15:
+            recs.append(f"⚠️ Revenue dropped {abs(chg):.1f}% vs 7-day avg — check ad delivery, site performance, and seasonal demand.")
+        elif chg is not None and chg > 20:
+            recs.append(f"✅ Revenue up {chg:.1f}% vs 7-day avg — identify top campaigns and scale budgets.")
+
+    if ag_od > 0 and orders < ag_od * 0.8:
         recs.append("⚠️ Orders below 80% of 7-day avg — review traffic sources and Meta campaign delivery.")
 
-    returns_val = abs(safe_float(shopify_today.get("sales", {}).get("returns", 0)))
-    gross_val = safe_float(shopify_today.get("sales", {}).get("gross_sales", 0))
-    if gross_val > 0 and returns_val / gross_val > 0.12:
-        recs.append(f"⚠️ High return rate ({returns_val/gross_val*100:.1f}% of gross) — check sizing, quality complaints, or product descriptions.")
+    sess = shopify_today.get("sessions", {})
+    completed_checkout = safe_float(sess.get("sessions_that_completed_checkout", 0))
+    total_sessions     = safe_float(sess.get("sessions", 0))
+    if total_sessions > 1000 and completed_checkout < 5:
+        recs.append(
+            f"⚠️ Only {int(completed_checkout)} completed checkout(s) from {int(total_sessions):,} sessions. "
+            "Test the checkout flow urgently — possible payment or UX issue."
+        )
 
-    # ── Meta campaign insights ──
-    for c in meta_campaigns:
+    if gross > 0 and rt / gross > 0.12:
+        recs.append(f"⚠️ High return rate ({rt/gross*100:.1f}% of gross) — review sizing, quality, or product descriptions.")
+
+    # Campaign-level analysis
+    active = [c for c in meta_campaigns if safe_float(c.get("spend", 0)) > 0]
+    for c in active:
         spend = safe_float(c.get("spend", 0))
-        roas = extract_roas(c.get("purchase_roas"))
-        name = c.get("campaign_name", c.get("name", ""))
-        if roas is not None and spend > 500 and roas < 1.0:
-            recs.append(f"🚨 PAUSE '{name}' — ROAS {roas}x is below breakeven. Reallocate ₹{spend:,.0f}/day budget.")
-        elif roas is not None and spend > 500 and roas < 1.5:
-            recs.append(f"⚠️ Review '{name}' — ROAS {roas}x is low. Test new creatives or tighten audience.")
-        elif roas is not None and roas > 5.0 and spend > 1000:
-            recs.append(f"✅ Scale '{name}' — ROAS {roas}x is excellent. Increase budget by 20–30%.")
+        roas  = extract_roas(c.get("purchase_roas"))
+        name  = c.get("campaign_name", c.get("name", ""))
+        if roas is not None and spend > 1000 and roas < 1.0:
+            recs.append(f"🚨 PAUSE '{name}' — ROAS {roas}x is below breakeven. Reallocate ₹{spend:,.0f} budget.")
+        elif roas is not None and spend > 1000 and roas < 2.0:
+            recs.append(f"⚠️ Review '{name}' — ROAS {roas:.2f}x is low on ₹{spend:,.0f} spend. Cut 20–30% budget or refresh creatives.")
+        elif roas is not None and roas > 4.0 and spend > 500:
+            recs.append(f"✅ Scale '{name}' — ROAS {roas:.2f}x is excellent. Increase budget by 25–30%.")
 
-    # ── Ad set insights ──
-    for a in meta_adsets:
-        spend = safe_float(a.get("spend", 0))
-        roas = extract_roas(a.get("purchase_roas"))
-        name = a.get("adset_name", a.get("name", ""))
-        ctr  = safe_float(a.get("ctr", 0))
-        if spend > 1000 and ctr < 0.8:
-            recs.append(f"⚠️ Low CTR ({ctr:.2f}%) on ad set '{name}' — refresh creative or test new hooks.")
-
-    # ── Anomaly signals ──
-    for anomaly in (anomalies or []):
-        recs.append(f"📊 Meta signal: {anomaly}")
-
-    # ── Fallback generic recs if nothing specific ──
     if not recs:
         recs.append("✅ All campaigns performing within normal range — continue monitoring.")
 
-    recs.append("🔍 Review Shopify abandoned checkouts and set up recovery email flows if not already active.")
-    recs.append("📱 Check product pages for top sellers — ensure images, descriptions, and sizes are current.")
+    recs.append("🔍 Review Shopify abandoned checkouts and activate email recovery flows if not already running.")
+    recs.append("📱 Audit product pages for top sellers — verify images, sizes, and descriptions are up to date.")
 
-    return recs[:7], notes   # cap at 7 actionable recs
+    return recs[:7], notes
 
 
-# ─────────────────────── Google Sheets helpers ────────────────────────────────
+# ─────────────────────── Sheets formatting helpers ────────────────────────────
 
-def cell_format(sheets_svc, spreadsheet_id: str, sheet_id: int,
-                start_row: int, end_row: int, start_col: int, end_col: int,
+def cell_format(sheet_id: int, start_row: int, end_row: int,
+                start_col: int, end_col: int,
                 bold: bool = False, bg_color: dict = None, fg_color: dict = None,
-                horizontal_alignment: str = None, number_format: str = None,
-                font_size: int = None, text_format: dict = None):
-    """Apply cell formatting via Sheets batchUpdate."""
+                horizontal_alignment: str = None, number_format_pattern: str = None,
+                number_format_type: str = "NUMBER", font_size: int = None) -> dict:
     cell_fmt = {}
-    if bold or fg_color or font_size or text_format:
-        tf = text_format or {}
-        if bold:        tf["bold"] = True
-        if fg_color:    tf["foregroundColor"] = fg_color
-        if font_size:   tf["fontSize"] = font_size
-        cell_fmt["textFormat"] = tf
-    if bg_color:
-        cell_fmt["backgroundColor"] = bg_color
+    tf = {}
+    if bold:     tf["bold"] = True
+    if fg_color: tf["foregroundColor"] = fg_color
+    if font_size: tf["fontSize"] = font_size
+    if tf:       cell_fmt["textFormat"] = tf
+    if bg_color: cell_fmt["backgroundColor"] = bg_color
     if horizontal_alignment:
         cell_fmt["horizontalAlignment"] = horizontal_alignment
-    if number_format:
-        cell_fmt["numberFormat"] = {"type": "NUMBER", "pattern": number_format}
+    if number_format_pattern:
+        cell_fmt["numberFormat"] = {"type": number_format_type, "pattern": number_format_pattern}
+
+    fields = []
+    if tf:                    fields.append("textFormat")
+    if bg_color:              fields.append("backgroundColor")
+    if horizontal_alignment:  fields.append("horizontalAlignment")
+    if number_format_pattern: fields.append("numberFormat")
 
     return {
         "repeatCell": {
@@ -413,17 +421,12 @@ def cell_format(sheets_svc, spreadsheet_id: str, sheet_id: int,
                 "endColumnIndex": end_col,
             },
             "cell": {"userEnteredFormat": cell_fmt},
-            "fields": "userEnteredFormat(" + ",".join([
-                "textFormat" if (bold or fg_color or font_size or text_format) else "",
-                "backgroundColor" if bg_color else "",
-                "horizontalAlignment" if horizontal_alignment else "",
-                "numberFormat" if number_format else "",
-            ]).replace(",,", ",").strip(",") + ")",
+            "fields": "userEnteredFormat(" + ",".join(fields) + ")",
         }
     }
 
 
-def freeze_request(sheet_id: int, rows: int = 1, cols: int = 0):
+def freeze_request(sheet_id: int, rows: int = 1, cols: int = 0) -> dict:
     return {
         "updateSheetProperties": {
             "properties": {
@@ -435,7 +438,7 @@ def freeze_request(sheet_id: int, rows: int = 1, cols: int = 0):
     }
 
 
-def auto_resize_request(sheet_id: int, start_col: int = 0, end_col: int = 26):
+def auto_resize_request(sheet_id: int, start_col: int = 0, end_col: int = 26) -> dict:
     return {
         "autoResizeDimensions": {
             "dimensions": {
@@ -449,7 +452,7 @@ def auto_resize_request(sheet_id: int, start_col: int = 0, end_col: int = 26):
 
 
 def add_filter_request(sheet_id: int, start_row: int, end_row: int,
-                        start_col: int, end_col: int):
+                        start_col: int, end_col: int) -> dict:
     return {
         "setBasicFilter": {
             "filter": {
@@ -465,292 +468,227 @@ def add_filter_request(sheet_id: int, start_row: int, end_row: int,
     }
 
 
-def conditional_format_pct(sheet_id: int, start_row: int, end_row: int,
-                             start_col: int, end_col: int):
-    """Colour positive green, negative red for percentage change columns."""
+def conditional_pct_format(sheet_id: int, start_row: int, end_row: int,
+                             start_col: int, end_col: int) -> list:
+    base = {"sheetId": sheet_id, "startRowIndex": start_row,
+            "endRowIndex": end_row, "startColumnIndex": start_col, "endColumnIndex": end_col}
     return [
-        {
-            "addConditionalFormatRule": {
-                "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": start_row,
-                                "endRowIndex": end_row, "startColumnIndex": start_col,
-                                "endColumnIndex": end_col}],
-                    "booleanRule": {
-                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "0"}]},
-                        "format": {"backgroundColor": {"red": 0.714, "green": 0.929, "blue": 0.714}},
-                    },
-                },
-                "index": 0,
-            }
-        },
-        {
-            "addConditionalFormatRule": {
-                "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": start_row,
-                                "endRowIndex": end_row, "startColumnIndex": start_col,
-                                "endColumnIndex": end_col}],
-                    "booleanRule": {
-                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "0"}]},
-                        "format": {"backgroundColor": {"red": 0.957, "green": 0.714, "blue": 0.714}},
-                    },
-                },
-                "index": 1,
-            }
-        },
+        {"addConditionalFormatRule": {"rule": {"ranges": [base], "booleanRule": {
+            "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "0"}]},
+            "format": {"backgroundColor": {"red": 0.714, "green": 0.929, "blue": 0.714}},
+        }}, "index": 0}},
+        {"addConditionalFormatRule": {"rule": {"ranges": [base], "booleanRule": {
+            "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "0"}]},
+            "format": {"backgroundColor": {"red": 0.957, "green": 0.714, "blue": 0.714}},
+        }}, "index": 1}},
     ]
 
 
-def conditional_format_roas(sheet_id: int, start_row: int, end_row: int,
-                              start_col: int, end_col: int):
-    """ROAS < 1.5 = red, 1.5-3 = yellow, > 3 = green."""
+def conditional_roas_format(sheet_id: int, start_row: int, end_row: int,
+                              start_col: int, end_col: int) -> list:
+    base = {"sheetId": sheet_id, "startRowIndex": start_row,
+            "endRowIndex": end_row, "startColumnIndex": start_col, "endColumnIndex": end_col}
     return [
-        {
-            "addConditionalFormatRule": {
-                "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": start_row,
-                                "endRowIndex": end_row, "startColumnIndex": start_col,
-                                "endColumnIndex": end_col}],
-                    "booleanRule": {
-                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "1.5"}]},
-                        "format": {"backgroundColor": {"red": 0.957, "green": 0.714, "blue": 0.714}},
-                    },
-                },
-                "index": 0,
-            }
-        },
-        {
-            "addConditionalFormatRule": {
-                "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": start_row,
-                                "endRowIndex": end_row, "startColumnIndex": start_col,
-                                "endColumnIndex": end_col}],
-                    "booleanRule": {
-                        "condition": {
-                            "type": "NUMBER_BETWEEN",
-                            "values": [{"userEnteredValue": "1.5"}, {"userEnteredValue": "3"}],
-                        },
-                        "format": {"backgroundColor": {"red": 1, "green": 0.949, "blue": 0.8}},
-                    },
-                },
-                "index": 1,
-            }
-        },
-        {
-            "addConditionalFormatRule": {
-                "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": start_row,
-                                "endRowIndex": end_row, "startColumnIndex": start_col,
-                                "endColumnIndex": end_col}],
-                    "booleanRule": {
-                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "3"}]},
-                        "format": {"backgroundColor": {"red": 0.714, "green": 0.929, "blue": 0.714}},
-                    },
-                },
-                "index": 2,
-            }
-        },
+        {"addConditionalFormatRule": {"rule": {"ranges": [base], "booleanRule": {
+            "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "2"}]},
+            "format": {"backgroundColor": {"red": 0.957, "green": 0.714, "blue": 0.714}},
+        }}, "index": 0}},
+        {"addConditionalFormatRule": {"rule": {"ranges": [base], "booleanRule": {
+            "condition": {"type": "NUMBER_BETWEEN",
+                          "values": [{"userEnteredValue": "2"}, {"userEnteredValue": "3.5"}]},
+            "format": {"backgroundColor": {"red": 1, "green": 0.949, "blue": 0.8}},
+        }}, "index": 1}},
+        {"addConditionalFormatRule": {"rule": {"ranges": [base], "booleanRule": {
+            "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "3.5"}]},
+            "format": {"backgroundColor": {"red": 0.714, "green": 0.929, "blue": 0.714}},
+        }}, "index": 2}},
     ]
 
 
-def write_header_row(ws, row: list, row_idx: int = 0):
-    """Write a bold header row with dark background."""
-    ws.update(f"A{row_idx+1}", [row])
+def batch_update(sheets_svc, spreadsheet_id: str, requests_list: list):
+    if requests_list:
+        sheets_svc.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id, body={"requests": requests_list}
+        ).execute()
 
 
 # ─────────────────────── Sheet tab builders ────────────────────────────────────
 
 def build_shopify_daily_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
-                             today_data: dict, seven_day_rows: list, seven_day_cols: list):
-    """Populate the 'Shopify Daily Data' tab."""
-    ws.clear()
+                             timeseries_data: dict, date_str: str):
+    """Append or update one day's row in Shopify Daily Data, never duplicate."""
     headers = [
-        "Date", "Gross Sales (₹)", "Net Sales (₹)", "Orders",
-        "AOV (₹)", "Total Sales (₹)", "Discounts (₹)", "Returns (₹)",
-        "Shipping (₹)", "Taxes (₹)", "Sessions", "Cart Adds",
-        "Reached Checkout", "Completed Checkout", "Conversion Rate (%)",
+        "Date", "Gross Sales (₹)", "Net Sales (₹)", "Orders", "AOV (₹)",
+        "Total Sales (₹)", "Discounts (₹)", "Returns (₹)", "Shipping (₹)", "Taxes (₹)",
+        "Sessions", "Cart Adds", "Reached Checkout", "Completed Checkout", "Conv. Rate (%)",
     ]
-    ws.update("A1", [headers])
 
-    # Write 7-day historical rows
-    existing_dates = set()
-    all_data_rows = []
+    sales_data    = timeseries_data["sales"]
+    sessions_data = timeseries_data["sessions"]
+    sales_cols    = sales_data.get("columns", [])
+    sales_rows    = sales_data.get("rows", [])
+    sess_cols     = sessions_data.get("columns", [])
+    sess_rows     = sessions_data.get("rows", [])
+    sci = {c: i for i, c in enumerate(sales_cols)}
+    ssi = {c: i for i, c in enumerate(sess_cols)}
 
-    col_idx = {c: i for i, c in enumerate(seven_day_cols)}
-    for row in seven_day_rows:
-        date_val = row[col_idx.get("day", 0)] if seven_day_cols else row[0]
-        existing_dates.add(str(date_val))
-        data_row = [
-            str(date_val),
-            safe_float(row[col_idx.get("gross_sales", 1)]),
-            safe_float(row[col_idx.get("net_sales", 2)]),
-            int(safe_float(row[col_idx.get("orders", 3)])),
-            round(safe_float(row[col_idx.get("average_order_value", 4)]), 2),
-            safe_float(row[col_idx.get("total_sales", 5)]),
-            abs(safe_float(row[col_idx.get("discounts", 6)])),
-            abs(safe_float(row[col_idx.get("returns", 7)])),
-            safe_float(row[col_idx.get("shipping_charges", 8)]),
-            safe_float(row[col_idx.get("taxes", 9)]),
-            "", "", "", "", "",   # sessions cols TBD
-        ]
-        all_data_rows.append(data_row)
+    # Build a lookup: date -> sessions row
+    sess_lookup = {}
+    for row in sess_rows:
+        day = str(row[ssi.get("day", 0)]) if sess_cols else ""
+        sess_lookup[day] = row
 
-    if all_data_rows:
-        ws.update(f"A2", all_data_rows)
+    # Check existing dates in sheet
+    existing = ws.col_values(1)
+    if not existing or existing[0] != "Date":
+        ws.clear()
+        ws.update("A1", [headers])
+        existing = [headers[0]]
 
-    total_rows = len(all_data_rows) + 2   # +1 header +1 for next append
+    existing_dates = set(existing[1:])
+    new_rows = []
+    for row in sales_rows:
+        day = str(row[sci.get("day", 0)])
+        if day in existing_dates:
+            continue  # Skip duplicates
+        sr = sess_lookup.get(day, [])
+        new_rows.append([
+            day,
+            safe_float(row[sci.get("gross_sales", 1)]),
+            safe_float(row[sci.get("net_sales", 2)]),
+            int(safe_float(row[sci.get("orders", 3)])),
+            round(safe_float(row[sci.get("average_order_value", 4)]), 2),
+            safe_float(row[sci.get("total_sales", 5)]),
+            abs(safe_float(row[sci.get("discounts", 6)])),
+            abs(safe_float(row[sci.get("returns", 7)])),
+            safe_float(row[sci.get("shipping_charges", 8)]),
+            safe_float(row[sci.get("taxes", 9)]),
+            int(safe_float(sr[ssi.get("sessions", 1)])) if sr and len(sr) > 1 else "",
+            int(safe_float(sr[ssi.get("sessions_with_cart_additions", 2)])) if sr and len(sr) > 2 else "",
+            int(safe_float(sr[ssi.get("sessions_that_reached_checkout", 3)])) if sr and len(sr) > 3 else "",
+            int(safe_float(sr[ssi.get("sessions_that_completed_checkout", 4)])) if sr and len(sr) > 4 else "",
+            round(safe_float(sr[ssi.get("conversion_rate", 5)]) * 100, 4) if sr and len(sr) > 5 else "",
+        ])
 
-    # Format
-    requests_body = [
-        cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                    0, 1, 0, len(headers),
+    if new_rows:
+        next_row = len(existing) + 1
+        ws.update(f"A{next_row}", new_rows)
+
+    total_rows = len(existing) + len(new_rows)
+    reqs = [
+        cell_format(sheet_id, 0, 1, 0, len(headers),
                     bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG),
         freeze_request(sheet_id, rows=1),
         add_filter_request(sheet_id, 0, total_rows, 0, len(headers)),
         auto_resize_request(sheet_id, 0, len(headers)),
     ]
-    # Currency format for sales columns (B-G, H = col 1-7)
-    for col in range(1, 10):
-        requests_body.append(
-            cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                        1, total_rows, col, col + 1,
-                        number_format='₹#,##0.00')
-        )
-    sheets_svc.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body={"requests": requests_body}
-    ).execute()
+    for col in [1, 2, 4, 5, 6, 7, 8, 9]:
+        reqs.append(cell_format(sheet_id, 1, total_rows, col, col + 1,
+                                number_format_pattern='₹#,##0.00'))
+    reqs.append(cell_format(sheet_id, 1, total_rows, 14, 15,
+                            number_format_pattern='0.0000"%"'))
+    batch_update(sheets_svc, spreadsheet_id, reqs)
 
 
 def build_meta_daily_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
-                          today_campaigns: list, seven_day_data: list):
-    """Populate the 'Meta Ads Daily Data' tab."""
-    ws.clear()
+                          meta_summary: dict, date_str: str):
+    """Append one row per day to Meta Ads Daily Data, no duplicates."""
     headers = [
         "Date", "Total Spend (₹)", "Impressions", "Reach", "Clicks",
         "CTR (%)", "CPC (₹)", "CPM (₹)", "Purchases", "CPA (₹)", "ROAS",
     ]
-    ws.update("A1", [headers])
 
-    # Aggregate today's data across campaigns
-    total_spend  = sum(safe_float(c.get("spend", 0)) for c in today_campaigns)
-    total_impr   = sum(int(safe_float(c.get("impressions", 0))) for c in today_campaigns)
-    total_reach  = sum(int(safe_float(c.get("reach", 0))) for c in today_campaigns)
-    total_clicks = sum(int(safe_float(c.get("clicks", 0))) for c in today_campaigns)
-    total_purch  = sum(extract_purchases(c.get("actions", [])) for c in today_campaigns)
-    ctr  = round(total_clicks / total_impr * 100, 2) if total_impr else 0
-    cpc  = round(total_spend / total_clicks, 2) if total_clicks else 0
-    cpm  = round(total_spend / total_impr * 1000, 2) if total_impr else 0
-    cpa  = round(total_spend / total_purch, 2) if total_purch else 0
-    roas_vals = [extract_roas(c.get("purchase_roas")) for c in today_campaigns
-                 if extract_roas(c.get("purchase_roas")) is not None]
-    blended_roas = round(avg(roas_vals), 2) if roas_vals else 0
+    existing = ws.col_values(1)
+    if not existing or existing[0] != "Date":
+        ws.clear()
+        ws.update("A1", [headers])
+        existing = [headers[0]]
 
-    today_str = yesterday_kolkata().isoformat()
-    today_row = [today_str, round(total_spend, 2), total_impr, total_reach,
-                 total_clicks, ctr, cpc, cpm, total_purch, cpa, blended_roas]
+    if date_str not in existing[1:]:
+        new_row = [
+            date_str,
+            meta_summary["spend"],
+            meta_summary["impressions"],
+            meta_summary["reach"],
+            meta_summary["clicks"],
+            meta_summary["ctr"],
+            meta_summary["cpc"],
+            meta_summary["cpm"],
+            meta_summary["purchases"],
+            meta_summary["cpa"],
+            meta_summary["roas"],
+        ]
+        ws.update(f"A{len(existing) + 1}", [new_row])
+        total_rows = len(existing) + 2
+    else:
+        total_rows = len(existing) + 1
 
-    existing_dates_range = ws.col_values(1)[1:]   # skip header
-    if today_str not in existing_dates_range:
-        next_row = len(existing_dates_range) + 2
-        ws.update(f"A{next_row}", [today_row])
-
-    total_rows = max(len(existing_dates_range) + 2, 3)
-    requests_body = [
-        cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                    0, 1, 0, len(headers),
+    reqs = [
+        cell_format(sheet_id, 0, 1, 0, len(headers),
                     bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG),
         freeze_request(sheet_id, rows=1),
         add_filter_request(sheet_id, 0, total_rows, 0, len(headers)),
         auto_resize_request(sheet_id, 0, len(headers)),
     ]
-    # Currency format: Spend(B), CPC(G), CPM(H), CPA(J)
     for col in [1, 6, 7, 9]:
-        requests_body.append(
-            cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                        1, total_rows, col, col + 1,
-                        number_format='₹#,##0.00')
-        )
-    # Percentage: CTR(F)
-    requests_body.append(
-        cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                    1, total_rows, 5, 6,
-                    number_format='0.00"%"')
-    )
-    sheets_svc.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body={"requests": requests_body}
-    ).execute()
+        reqs.append(cell_format(sheet_id, 1, total_rows, col, col + 1,
+                                number_format_pattern='₹#,##0.00'))
+    reqs.append(cell_format(sheet_id, 1, total_rows, 5, 6,
+                            number_format_pattern='0.00"%"'))
+    reqs += conditional_roas_format(sheet_id, 1, total_rows, 10, 11)
+    batch_update(sheets_svc, spreadsheet_id, reqs)
 
 
 def build_product_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
                        today_products: dict, seven_day_products: dict):
-    """Populate the 'Product Performance' tab."""
     ws.clear()
-    headers_today = ["Product", "Gross Sales (₹)", "Net Sales (₹)", "Orders", "Total Sales (₹)"]
-    section_7d    = ["", "7-Day Gross (₹)", "7-Day Net (₹)", "7-Day Orders"]
-
-    ws.update("A1", [["─── Yesterday ───", "", "", "", "",
-                       "─── 7-Day Total ───", "", "", ""]])
-    ws.update("A2", [headers_today + section_7d[1:]])
+    ws.update("A1", [["─── Yesterday ───", "", "", "", "", "─── 7-Day Total ───", "", ""]])
+    headers = ["Product", "Gross Sales (₹)", "Net Sales (₹)", "Orders",
+               "", "7-Day Gross (₹)", "7-Day Net (₹)", "7-Day Orders"]
+    ws.update("A2", [headers])
 
     today_rows = today_products.get("rows", [])
     seven_rows = seven_day_products.get("rows", [])
-
-    # Build lookup for 7-day totals
-    seven_lookup = {}
-    for row in seven_rows:
-        prod = str(row[0])
-        seven_lookup[prod] = row
+    seven_lookup = {str(r[0]): r for r in seven_rows}
 
     data = []
     for row in today_rows:
-        prod = str(row[0])
-        seven = seven_lookup.get(prod, [""] * 4)
+        prod  = str(row[0])
+        seven = seven_lookup.get(prod, [])
         data.append([
             prod,
             safe_float(row[1]),
             safe_float(row[2]),
             int(safe_float(row[3])),
-            safe_float(row[4]) if len(row) > 4 else "",
+            "",
             safe_float(seven[1]) if len(seven) > 1 else "",
             safe_float(seven[2]) if len(seven) > 2 else "",
             int(safe_float(seven[3])) if len(seven) > 3 else "",
         ])
-
     if data:
         ws.update("A3", data)
 
     total_rows = len(data) + 3
-    requests_body = [
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 0, 1, 0, 9,
-                    bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG),
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 1, 2, 0, 9,
-                    bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG),
+    reqs = [
+        cell_format(sheet_id, 0, 1, 0, 8, bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG),
+        cell_format(sheet_id, 1, 2, 0, 8, bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG),
         freeze_request(sheet_id, rows=2),
-        add_filter_request(sheet_id, 1, total_rows, 0, 9),
-        auto_resize_request(sheet_id, 0, 9),
+        add_filter_request(sheet_id, 1, total_rows, 0, 8),
+        auto_resize_request(sheet_id, 0, 8),
     ]
-    for col in [1, 2, 4, 5, 6]:
-        requests_body.append(
-            cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                        2, total_rows, col, col + 1,
-                        number_format='₹#,##0.00')
-        )
-    sheets_svc.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body={"requests": requests_body}
-    ).execute()
+    for col in [1, 2, 5, 6]:
+        reqs.append(cell_format(sheet_id, 2, total_rows, col, col + 1,
+                                number_format_pattern='₹#,##0.00'))
+    batch_update(sheets_svc, spreadsheet_id, reqs)
 
 
 def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
                         campaigns: list, adsets: list):
-    """Populate the 'Campaign Performance' tab."""
     ws.clear()
-
-    # ── Campaign section ──
-    camp_headers = [
-        "Campaign", "Status", "Spend (₹)", "Impressions", "Reach",
-        "Clicks", "CTR (%)", "CPC (₹)", "CPM (₹)", "Purchases", "CPA (₹)", "ROAS",
-    ]
-    ws.update("A1", [["━━━ CAMPAIGN LEVEL ━━━"] + [""] * (len(camp_headers) - 1)])
-    ws.update("A2", [camp_headers])
+    camp_hdrs = ["Campaign", "Status", "Spend (₹)", "Impressions", "Reach",
+                 "Clicks", "CTR (%)", "CPC (₹)", "Purchases", "CPA (₹)", "ROAS"]
+    ws.update("A1", [["━━━ CAMPAIGN LEVEL ━━━"] + [""] * (len(camp_hdrs) - 1)])
+    ws.update("A2", [camp_hdrs])
 
     camp_data = []
     for c in campaigns:
@@ -764,154 +702,110 @@ def build_campaign_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
             int(safe_float(c.get("impressions", 0))),
             int(safe_float(c.get("reach", 0))),
             int(safe_float(c.get("clicks", 0))),
-            safe_float(c.get("ctr", 0)),
-            safe_float(c.get("cpc", 0)),
-            safe_float(c.get("cpm", 0)),
+            round(safe_float(c.get("ctr", 0)), 2),
+            round(safe_float(c.get("cpc", 0)), 2),
             extract_purchases(c.get("actions", [])),
             extract_cpa(c.get("cost_per_action_type")) or "",
             extract_roas(c.get("purchase_roas")) or "",
         ])
-
     camp_data.sort(key=lambda r: r[2], reverse=True)
     if camp_data:
         ws.update("A3", camp_data)
-
     camp_end = len(camp_data) + 3
 
-    # ── Ad set section ──
-    adset_headers = [
-        "Ad Set", "Status", "Spend (₹)", "Impressions", "Reach",
-        "Clicks", "CTR (%)", "CPC (₹)", "CPM (₹)", "Purchases", "CPA (₹)", "ROAS", "Learning Phase",
-    ]
-    as_start = camp_end + 1
-    ws.update(f"A{as_start}", [["━━━ AD SET LEVEL ━━━"] + [""] * (len(adset_headers) - 1)])
-    ws.update(f"A{as_start + 1}", [adset_headers])
+    adset_hdrs = ["Ad Set", "Campaign", "Status", "Spend (₹)", "Impressions", "Reach",
+                  "Clicks", "CTR (%)", "CPC (₹)", "Purchases", "CPA (₹)", "ROAS"]
+    as_start = camp_end + 2
+    ws.update(f"A{as_start}", [["━━━ AD SET LEVEL ━━━"] + [""] * (len(adset_hdrs) - 1)])
+    ws.update(f"A{as_start + 1}", [adset_hdrs])
 
     as_data = []
     for a in adsets:
         spend = safe_float(a.get("spend", 0))
         if spend == 0:
             continue
-        delivery = a.get("delivery", {})
-        substatuses = delivery.get("substatuses", []) if isinstance(delivery, dict) else []
-        learning = "In Learning" if "in_learning_phase" in substatuses else (
-                   "Learning Exit Fail" if "learning_exit_unsuccessfully" in substatuses else "")
         as_data.append([
             a.get("adset_name", a.get("name", "")),
+            a.get("campaign_name", ""),
             a.get("effective_status", a.get("status", "")),
             round(spend, 2),
             int(safe_float(a.get("impressions", 0))),
             int(safe_float(a.get("reach", 0))),
             int(safe_float(a.get("clicks", 0))),
-            safe_float(a.get("ctr", 0)),
-            safe_float(a.get("cpc", 0)),
-            safe_float(a.get("cpm", 0)),
+            round(safe_float(a.get("ctr", 0)), 2),
+            round(safe_float(a.get("cpc", 0)), 2),
             extract_purchases(a.get("actions", [])),
             extract_cpa(a.get("cost_per_action_type")) or "",
             extract_roas(a.get("purchase_roas")) or "",
-            learning,
         ])
-
-    as_data.sort(key=lambda r: r[2], reverse=True)
+    as_data.sort(key=lambda r: r[3], reverse=True)
     if as_data:
         ws.update(f"A{as_start + 2}", as_data)
-
     as_end = as_start + 2 + len(as_data)
 
-    # ── Format requests ──
-    requests_body = [
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 0, 1, 0, len(camp_headers),
+    reqs = [
+        cell_format(sheet_id, 0, 1, 0, len(camp_hdrs),
                     bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG, font_size=11),
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 1, 2, 0, len(camp_headers),
+        cell_format(sheet_id, 1, 2, 0, len(camp_hdrs),
                     bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG),
-        cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                    as_start - 1, as_start, 0, len(adset_headers),
+        cell_format(sheet_id, as_start - 1, as_start, 0, len(adset_hdrs),
                     bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG, font_size=11),
-        cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                    as_start, as_start + 1, 0, len(adset_headers),
+        cell_format(sheet_id, as_start, as_start + 1, 0, len(adset_hdrs),
                     bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG),
         freeze_request(sheet_id, rows=2),
-        auto_resize_request(sheet_id, 0, len(adset_headers)),
+        auto_resize_request(sheet_id, 0, len(adset_hdrs)),
     ]
-    # Currency / percentage formats for campaign rows
-    for col in [2, 7, 8, 10]:
-        requests_body.append(
-            cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                        2, camp_end, col, col + 1,
-                        number_format='₹#,##0.00')
-        )
-    requests_body.append(
-        cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                    2, camp_end, 6, 7,
-                    number_format='0.00"%"')
-    )
-    # ROAS conditional formatting for campaigns
-    requests_body += conditional_format_roas(sheet_id, 2, camp_end, 11, 12)
-    # Currency / pct for adset rows
-    for col in [2, 7, 8, 10]:
-        requests_body.append(
-            cell_format(sheets_svc, spreadsheet_id, sheet_id,
-                        as_start + 1, as_end, col, col + 1,
-                        number_format='₹#,##0.00')
-        )
-    requests_body += conditional_format_roas(sheet_id, as_start + 1, as_end, 11, 12)
-
-    sheets_svc.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body={"requests": requests_body}
-    ).execute()
+    for col in [2, 7, 9]:
+        reqs.append(cell_format(sheet_id, 2, camp_end, col, col + 1,
+                                number_format_pattern='₹#,##0.00'))
+    reqs.append(cell_format(sheet_id, 2, camp_end, 6, 7,
+                            number_format_pattern='0.00"%"'))
+    reqs += conditional_roas_format(sheet_id, 2, camp_end, 10, 11)
+    for col in [3, 8, 10]:
+        reqs.append(cell_format(sheet_id, as_start + 1, as_end, col, col + 1,
+                                number_format_pattern='₹#,##0.00'))
+    reqs += conditional_roas_format(sheet_id, as_start + 1, as_end, 11, 12)
+    batch_update(sheets_svc, spreadsheet_id, reqs)
 
 
 def build_recommendations_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
-                                recs: list, notes: list,
-                                date_str: str, unavailable_metrics: list = None):
-    """Populate the 'Recommendations & Notes' tab."""
+                                recs: list, date_str: str, unavailable: list = None):
     ws.clear()
-
     all_rows = [
         [f"RECOMMENDATIONS & NOTES — {date_str}", ""],
         ["", ""],
         ["TYPE", "RECOMMENDATION / NOTE"],
     ]
-
     for rec in recs:
-        icon = rec[:2] if rec[0] in "⚠🚨✅📊🔍📱" else "💡"
+        icon = rec[:2] if rec and rec[0] in "⚠🚨✅📊🔍📱💡" else "💡"
         all_rows.append([icon, rec[len(icon):].strip()])
 
-    if unavailable_metrics:
-        all_rows.append(["", ""])
-        all_rows.append(["UNAVAILABLE METRICS", ""])
-        for m in unavailable_metrics:
+    if unavailable:
+        all_rows += [["", ""], ["UNAVAILABLE METRICS", ""]]
+        for m in unavailable:
             all_rows.append(["ℹ️", m])
 
     ws.update("A1", all_rows)
-
     n = len(all_rows)
-    requests_body = [
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 0, 1, 0, 2,
-                    bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG, font_size=13),
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 2, 3, 0, 2,
-                    bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG),
+    reqs = [
+        cell_format(sheet_id, 0, 1, 0, 2, bold=True, bg_color=C_ACCENT,
+                    fg_color=C_HEADER_FG, font_size=13),
+        cell_format(sheet_id, 2, 3, 0, 2, bold=True, bg_color=C_HEADER_BG,
+                    fg_color=C_HEADER_FG),
         freeze_request(sheet_id, rows=3),
         auto_resize_request(sheet_id, 0, 2),
     ]
-    sheets_svc.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body={"requests": requests_body}
-    ).execute()
+    batch_update(sheets_svc, spreadsheet_id, reqs)
 
 
 def build_dashboard_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
                          shopify_today: dict, shopify_7d_avg: dict,
-                         meta_summary: dict, recs: list, date_str: str,
-                         shopify_tab_id: int, meta_tab_id: int):
-    """Populate the 'Dashboard' tab with executive summary and key metrics."""
+                         meta_summary: dict, recs: list, date_str: str):
     ws.clear()
 
-    def fmt_inr(v: float) -> str:
-        return f"₹{v:,.0f}"
-
-    def fmt_pct(v: float | None) -> str:
-        if v is None:
-            return "—"
+    def fmt(v: float) -> str: return f"₹{v:,.0f}"
+    def pc(v) -> str:
+        if v is None: return "—"
         return f"+{v:.1f}%" if v >= 0 else f"{v:.1f}%"
 
     s  = shopify_today.get("sales", {})
@@ -935,83 +829,60 @@ def build_dashboard_tab(ws, sheets_svc, spreadsheet_id: str, sheet_id: int,
     ro  = meta_summary.get("roas", 0)
 
     rows = [
-        [f"DAILY STORE & ADS PERFORMANCE — {date_str}", "", "", ""],
+        [f"DAILY STORE & ADS PERFORMANCE DASHBOARD — {date_str}", "", "", ""],
+        ["Dhirai | 36dhns-ed.myshopify.com | Meta Account: 979830497515712", "", "", ""],
         ["", "", "", ""],
         ["━━━ SHOPIFY PERFORMANCE ━━━", "", "", ""],
-        ["Metric", "Yesterday", "7-Day Avg", "Change vs Avg"],
-        ["Gross Sales", fmt_inr(gs), fmt_inr(ag_gs), fmt_pct(pct_change(gs, ag_gs))],
-        ["Net Sales", fmt_inr(ns), fmt_inr(ag_ns), fmt_pct(pct_change(ns, ag_ns))],
-        ["Orders", str(od), str(round(ag_od, 1)), fmt_pct(pct_change(od, ag_od))],
-        ["Avg Order Value", fmt_inr(ao), fmt_inr(ag_ao), fmt_pct(pct_change(ao, ag_ao))],
-        ["Returns", fmt_inr(rt), "", ""],
+        ["Metric", "Yesterday", "7-Day Daily Avg", "Change vs Avg"],
+        ["Gross Sales",     fmt(gs), fmt(ag_gs), pc(pct_change(gs, ag_gs))],
+        ["Net Sales",       fmt(ns), fmt(ag_ns), pc(pct_change(ns, ag_ns))],
+        ["Orders",          str(od), str(round(ag_od, 1)), pc(pct_change(od, ag_od))],
+        ["Avg Order Value", fmt(ao), fmt(ag_ao), pc(pct_change(ao, ag_ao))],
+        ["Returns",         fmt(rt), "", ""],
         ["", "", "", ""],
         ["━━━ META ADS PERFORMANCE ━━━", "", "", ""],
         ["Metric", "Yesterday", "", ""],
-        ["Total Spend", fmt_inr(sp), "", ""],
-        ["Impressions", f"{imp:,}", "", ""],
-        ["Clicks", f"{cl:,}", "", ""],
-        ["CTR", f"{ctr:.2f}%", "", ""],
-        ["Purchases (attributed)", str(pu), "", ""],
-        ["CPA", fmt_inr(cpa), "", ""],
-        ["Blended ROAS", f"{ro:.2f}x", "", ""],
+        ["Total Spend",    fmt(sp),          "", ""],
+        ["Impressions",    f"{imp:,}",       "", ""],
+        ["Clicks",         f"{cl:,}",        "", ""],
+        ["CTR",            f"{ctr:.2f}%",    "", ""],
+        ["Purchases",      str(pu),          "", ""],
+        ["CPA",            fmt(cpa),         "", ""],
+        ["Blended ROAS",   f"{ro:.2f}x",     "", ""],
         ["", "", "", ""],
         ["━━━ KEY WINS ━━━", "", "", ""],
     ]
 
-    # Add key wins (positive recs)
     wins = [r for r in recs if r.startswith("✅")]
-    if wins:
-        for w in wins[:3]:
-            rows.append(["", w, "", ""])
-    else:
-        rows.append(["", "Monitor for positive trends.", "", ""])
-
-    rows.append(["", "", "", ""])
-    rows.append(["━━━ KEY ISSUES ━━━", "", "", ""])
+    rows += [["", w, "", ""] for w in wins[:3]] or [["", "Monitoring for positive trends.", "", ""]]
+    rows += [["", "", "", ""], ["━━━ KEY ISSUES ━━━", "", "", ""]]
     issues = [r for r in recs if r.startswith(("⚠️", "🚨"))]
-    if issues:
-        for i in issues[:3]:
-            rows.append(["", i, "", ""])
-    else:
-        rows.append(["", "No critical issues detected.", "", ""])
-
-    rows.append(["", "", "", ""])
-    rows.append(["━━━ RECOMMENDED ACTIONS TODAY ━━━", "", "", ""])
+    rows += [["", i, "", ""] for i in issues[:3]] or [["", "No critical issues.", "", ""]]
+    rows += [["", "", "", ""], ["━━━ RECOMMENDED ACTIONS TODAY ━━━", "", "", ""]]
     for idx, rec in enumerate(recs[:5], 1):
         rows.append([f"{idx}.", rec, "", ""])
 
     ws.update("A1", rows)
 
-    requests_body = [
-        # Title row
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 0, 1, 0, 4,
-                    bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG, font_size=14),
-        # Section headers
-    ]
-
-    section_rows = [2, 10, 20, 22, 25, 27]  # approximate; adjust if row count changes
-    for sr in section_rows:
-        requests_body.append(
-            cell_format(sheets_svc, spreadsheet_id, sheet_id, sr, sr + 1, 0, 4,
-                        bold=True, bg_color=C_HEADER_BG, fg_color=C_HEADER_FG, font_size=11)
-        )
-
-    requests_body += [
-        # Sub-header rows for tables
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 3, 4, 0, 4,
-                    bold=True, bg_color=C_SECTION_BG),
-        cell_format(sheets_svc, spreadsheet_id, sheet_id, 11, 12, 0, 4,
-                    bold=True, bg_color=C_SECTION_BG),
+    reqs = [
+        cell_format(sheet_id, 0, 1, 0, 4, bold=True, bg_color=C_HEADER_BG,
+                    fg_color=C_HEADER_FG, font_size=14),
+        cell_format(sheet_id, 1, 2, 0, 4, bg_color=C_SECTION_BG,
+                    fg_color={"red": 0.4, "green": 0.4, "blue": 0.4}, font_size=11),
         freeze_request(sheet_id, rows=1),
         auto_resize_request(sheet_id, 0, 4),
     ]
-
-    # Conditional formatting for change column (D, col index 3)
-    requests_body += conditional_format_pct(sheet_id, 4, 9, 3, 4)
-
-    sheets_svc.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body={"requests": requests_body}
-    ).execute()
+    section_header_rows = [3, 11, 21]
+    for sr in section_header_rows:
+        reqs.append(cell_format(sheet_id, sr, sr + 1, 0, 4,
+                                bold=True, bg_color=C_ACCENT, fg_color=C_HEADER_FG,
+                                font_size=11))
+    reqs.append(cell_format(sheet_id, 4, 5, 0, 4,
+                            bold=True, bg_color=C_SECTION_BG))
+    reqs.append(cell_format(sheet_id, 12, 13, 0, 4,
+                            bold=True, bg_color=C_SECTION_BG))
+    reqs += conditional_pct_format(sheet_id, 5, 10, 3, 4)
+    batch_update(sheets_svc, spreadsheet_id, reqs)
 
 
 # ─────────────────────── Spreadsheet orchestration ─────────────────────────────
@@ -1036,194 +907,146 @@ def get_or_create_spreadsheet(gc: gspread.Client, name: str) -> gspread.Spreadsh
 
 
 def ensure_tabs(ss: gspread.Spreadsheet) -> dict:
-    """Make sure all required tabs exist; return {name: worksheet}."""
     existing = {ws.title: ws for ws in ss.worksheets()}
     tab_map = {}
     for tab in TAB_NAMES:
         if tab not in existing:
-            ws = ss.add_worksheet(title=tab, rows=500, cols=30)
+            ws = ss.add_worksheet(title=tab, rows=1000, cols=30)
         else:
             ws = existing[tab]
         tab_map[tab] = ws
-    # Remove the default 'Sheet1' if present
-    if "Sheet1" in existing and "Sheet1" not in TAB_NAMES:
+    if "Sheet1" in existing:
         try:
             ss.del_worksheet(existing["Sheet1"])
         except Exception:
             pass
-    # Reorder tabs
-    for idx, name in enumerate(TAB_NAMES):
-        try:
-            ss.reorder_worksheets([tab_map[t] for t in TAB_NAMES if t in tab_map])
-        except Exception:
-            pass
-        break
+    try:
+        ss.reorder_worksheets([tab_map[t] for t in TAB_NAMES if t in tab_map])
+    except Exception:
+        pass
     return tab_map
 
 
-def update_spreadsheet(date_str: str,
-                        shopify_today: dict, shopify_7d: dict,
-                        shopify_products_today: dict, shopify_products_7d: dict,
-                        meta_campaigns: list, meta_adsets: list,
-                        recs: list, notes: list,
-                        unavailable: list) -> str:
+def run_dashboard(date_str: str,
+                  shopify_today: dict,
+                  timeseries_data: dict,
+                  shopify_prod_today: dict,
+                  shopify_prod_7d: dict,
+                  meta_campaigns: list,
+                  meta_adsets: list,
+                  shopify_7d_avg: dict,
+                  meta_summary: dict,
+                  recs: list,
+                  unavailable: list) -> tuple[str, object]:
     gc, sheets_svc, gmail_svc = get_google_clients()
     ss = get_or_create_spreadsheet(gc, SPREADSHEET_NAME)
-    tab_map = ensure_tabs(ss)
-
+    tab_map  = ensure_tabs(ss)
     sheet_ids = {ws.title: ws.id for ws in ss.worksheets()}
 
-    # Compute 7-day averages from Shopify data
-    seven_day_rows = shopify_7d.get("rows", [])
-    seven_day_cols = shopify_7d.get("columns", [])
-    col_idx = {c: i for i, c in enumerate(seven_day_cols)}
-
-    # Exclude today's row if it's in the 7-day window
-    prev_rows = [r for r in seven_day_rows if str(r[col_idx.get("day", 0)]) != date_str]
-    shopify_7d_avg = compute_7day_averages(prev_rows, {
-        "gross_sales":        col_idx.get("gross_sales", 1),
-        "net_sales":          col_idx.get("net_sales", 2),
-        "orders":             col_idx.get("orders", 3),
-        "average_order_value": col_idx.get("average_order_value", 4),
-    })
-
-    # Aggregate Meta summary for dashboard
-    total_spend  = sum(safe_float(c.get("spend", 0)) for c in meta_campaigns)
-    total_impr   = sum(int(safe_float(c.get("impressions", 0))) for c in meta_campaigns)
-    total_clicks = sum(int(safe_float(c.get("clicks", 0))) for c in meta_campaigns)
-    total_purch  = sum(extract_purchases(c.get("actions", [])) for c in meta_campaigns)
-    total_ctr    = round(total_clicks / total_impr * 100, 2) if total_impr else 0
-    total_cpa    = round(total_spend / total_purch, 2) if total_purch else 0
-    roas_vals    = [extract_roas(c.get("purchase_roas")) for c in meta_campaigns
-                    if extract_roas(c.get("purchase_roas")) is not None]
-    blended_roas = round(avg(roas_vals), 2) if roas_vals else 0
-    meta_summary = {
-        "spend": round(total_spend, 2),
-        "impressions": total_impr,
-        "clicks": total_clicks,
-        "purchases": total_purch,
-        "ctr": total_ctr,
-        "cpa": total_cpa,
-        "roas": blended_roas,
-    }
-
-    # ── Build each tab ──
     build_shopify_daily_tab(
         tab_map["Shopify Daily Data"], sheets_svc, ss.id,
-        sheet_ids["Shopify Daily Data"], shopify_today, seven_day_rows, seven_day_cols
+        sheet_ids["Shopify Daily Data"], timeseries_data, date_str,
     )
     build_meta_daily_tab(
         tab_map["Meta Ads Daily Data"], sheets_svc, ss.id,
-        sheet_ids["Meta Ads Daily Data"], meta_campaigns, []
+        sheet_ids["Meta Ads Daily Data"], meta_summary, date_str,
     )
     build_product_tab(
         tab_map["Product Performance"], sheets_svc, ss.id,
-        sheet_ids["Product Performance"], shopify_products_today, shopify_products_7d
+        sheet_ids["Product Performance"], shopify_prod_today, shopify_prod_7d,
     )
     build_campaign_tab(
         tab_map["Campaign Performance"], sheets_svc, ss.id,
-        sheet_ids["Campaign Performance"], meta_campaigns, meta_adsets
+        sheet_ids["Campaign Performance"], meta_campaigns, meta_adsets,
     )
     build_recommendations_tab(
         tab_map["Recommendations & Notes"], sheets_svc, ss.id,
-        sheet_ids["Recommendations & Notes"], recs, notes, date_str, unavailable
+        sheet_ids["Recommendations & Notes"], recs, date_str, unavailable,
     )
     build_dashboard_tab(
         tab_map["Dashboard"], sheets_svc, ss.id,
         sheet_ids["Dashboard"], shopify_today, shopify_7d_avg,
         meta_summary, recs, date_str,
-        sheet_ids["Shopify Daily Data"], sheet_ids["Meta Ads Daily Data"]
     )
-
-    return ss.url, gmail_svc, meta_summary, shopify_7d_avg
+    return ss.url, gmail_svc
 
 
 # ─────────────────────── Email ─────────────────────────────────────────────────
 
 def send_or_draft_email(gmail_svc, sheet_url: str, date_str: str,
                          shopify_today: dict, shopify_7d_avg: dict,
-                         meta_summary: dict, recs: list,
-                         urgent_issues: list):
-    """Send or create a draft email with the daily summary."""
+                         meta_summary: dict, recs: list):
     import base64
     from email.mime.text import MIMEText
 
-    s = shopify_today.get("sales", {})
+    s  = shopify_today.get("sales", {})
     gs = safe_float(s.get("gross_sales", 0))
     ns = safe_float(s.get("net_sales", 0))
     od = int(safe_float(s.get("orders", 0)))
     ao = safe_float(s.get("average_order_value", 0))
     rt = abs(safe_float(s.get("returns", 0)))
 
-    def fmt_inr(v): return f"₹{v:,.0f}"
-    def fmt_pct(v): return (f"+{v:.1f}%" if v >= 0 else f"{v:.1f}%") if v is not None else "—"
+    def fmt(v): return f"₹{v:,.0f}"
+    def pc(v):
+        if v is None: return "—"
+        return (f"+{v:.1f}%" if v >= 0 else f"{v:.1f}%")
 
     ag_gs = shopify_7d_avg.get("gross_sales", 0)
     ag_ns = shopify_7d_avg.get("net_sales", 0)
     ag_od = shopify_7d_avg.get("orders", 0)
-
     sp   = meta_summary.get("spend", 0)
     pu   = meta_summary.get("purchases", 0)
     cpa  = meta_summary.get("cpa", 0)
     roas = meta_summary.get("roas", 0)
 
+    urgent = [r for r in recs if r.startswith("🚨")]
     urgent_block = ""
-    if urgent_issues:
-        urgent_block = "\n🚨 URGENT ISSUES\n" + "\n".join(f"  • {i}" for i in urgent_issues) + "\n\n"
+    if urgent:
+        urgent_block = (
+            "\n🚨 URGENT ISSUES\n"
+            + "\n".join(f"  • {i}" for i in urgent)
+            + "\n\n"
+        )
 
     body = f"""\
 Hi Atul,
+{urgent_block}
+Daily performance summary for {date_str}:
 
-{urgent_block}Here is your daily performance summary for {date_str}.
+━━━ SHOPIFY ━━━
+  Gross Sales:     {fmt(gs)}   ({pc(pct_change(gs, ag_gs))} vs 7-day avg {fmt(ag_gs)})
+  Net Sales:       {fmt(ns)}   ({pc(pct_change(ns, ag_ns))} vs 7-day avg {fmt(ag_ns)})
+  Orders:          {od}         ({pc(pct_change(od, ag_od))} vs 7-day avg {round(ag_od, 1)})
+  Avg Order Value: {fmt(ao)}
+  Returns:         {fmt(rt)}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📦 SHOPIFY PERFORMANCE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Gross Sales:     {fmt_inr(gs)}   ({fmt_pct(pct_change(gs, ag_gs))} vs 7-day avg {fmt_inr(ag_gs)})
-  Net Sales:       {fmt_inr(ns)}   ({fmt_pct(pct_change(ns, ag_ns))} vs 7-day avg {fmt_inr(ag_ns)})
-  Orders:          {od}           ({fmt_pct(pct_change(od, ag_od))} vs 7-day avg {round(ag_od, 1)})
-  Avg Order Value: {fmt_inr(ao)}
-  Returns:         {fmt_inr(rt)}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📣 META ADS PERFORMANCE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Total Spend:     {fmt_inr(sp)}
+━━━ META ADS ━━━
+  Total Spend:     {fmt(sp)}
   Purchases:       {pu}
-  CPA:             {fmt_inr(cpa)}
+  CPA:             {fmt(cpa)}
   Blended ROAS:    {roas:.2f}x
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ RECOMMENDED ACTIONS FOR TODAY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━ RECOMMENDED ACTIONS ━━━
 {chr(10).join(f"  {i+1}. {r}" for i, r in enumerate(recs[:5]))}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Full Dashboard: {sheet_url}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━ FULL DASHBOARD ━━━
+{sheet_url}
 
 Best,
 Dhirai Daily Bot
 """
-
-    html_body = body.replace("\n", "<br>").replace("━", "─")
-
-    msg = MIMEText(html_body, "html")
+    msg = MIMEText(body, "plain")
     msg["To"]      = GMAIL_TO
     msg["Subject"] = f"Daily Store & Ads Performance Sheet - {date_str}"
     if GMAIL_CC:
         msg["Cc"] = GMAIL_CC
 
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
-
     try:
-        gmail_svc.users().messages().send(
-            userId="me", body={"raw": raw}
-        ).execute()
+        gmail_svc.users().messages().send(userId="me", body={"raw": raw}).execute()
         print(f"✅ Email sent to {GMAIL_TO}")
     except HttpError as e:
-        # Fallback: create draft
-        print(f"⚠️  Send failed ({e}), creating draft instead...")
+        print(f"⚠️  Send failed ({e}), creating draft...")
         gmail_svc.users().drafts().create(
             userId="me", body={"message": {"raw": raw}}
         ).execute()
@@ -1233,15 +1056,14 @@ Dhirai Daily Bot
 # ─────────────────────── Main ──────────────────────────────────────────────────
 
 def main():
-    yesterday     = yesterday_kolkata()
-    seven_ago     = yesterday - datetime.timedelta(days=6)   # 7-day window starts here
-    date_str      = yesterday.isoformat()
-    since_7d      = seven_ago.isoformat()
-    unavailable   = []
+    yesterday = yesterday_kolkata()
+    seven_ago = yesterday - datetime.timedelta(days=7)
+    date_str  = yesterday.isoformat()
+    since_7d  = seven_ago.isoformat()
+    unavailable = []
 
     print(f"📅 Running dashboard for {date_str} (Asia/Kolkata)")
 
-    # ── Fetch Shopify ──
     print("🛒 Fetching Shopify data...")
     try:
         shopify_today = fetch_shopify_daily(date_str)
@@ -1251,85 +1073,73 @@ def main():
         unavailable.append(f"Shopify daily data unavailable: {e}")
 
     try:
-        shopify_7d = fetch_shopify_7day(since_7d, date_str)
+        timeseries_data = fetch_shopify_8day_timeseries(since_7d, date_str)
     except Exception as e:
-        print(f"  ⚠️ Shopify 7-day fetch failed: {e}")
-        shopify_7d = {"rows": [], "columns": []}
-        unavailable.append(f"Shopify 7-day data unavailable: {e}")
-
-    try:
-        shopify_prod_today = fetch_shopify_daily(date_str)["top_products"] if not unavailable else {"rows": [], "columns": []}
-    except Exception:
-        shopify_prod_today = {"rows": [], "columns": []}
+        print(f"  ⚠️ Shopify timeseries fetch failed: {e}")
+        timeseries_data = {"sales": {"rows": [], "columns": []},
+                           "sessions": {"rows": [], "columns": []}}
+        unavailable.append(f"Shopify timeseries unavailable: {e}")
 
     try:
         shopify_prod_7d = fetch_shopify_7day_products(since_7d, date_str)
     except Exception as e:
         shopify_prod_7d = {"rows": [], "columns": []}
-        unavailable.append(f"Shopify 7-day product data unavailable: {e}")
+        unavailable.append(f"Shopify 7-day products unavailable: {e}")
 
-    # ── Fetch Meta Ads ──
     print("📣 Fetching Meta Ads data...")
     try:
-        meta_campaigns = fetch_meta_campaigns(date_str)
+        meta_campaigns = fetch_meta_level(date_str, "campaign")
     except Exception as e:
-        print(f"  ⚠️ Meta campaign fetch failed: {e}")
+        print(f"  ⚠️ Meta campaigns fetch failed: {e}")
         meta_campaigns = []
         unavailable.append(f"Meta campaign data unavailable: {e}")
 
     try:
-        meta_adsets = fetch_meta_adsets(date_str)
+        meta_adsets = fetch_meta_level(date_str, "adset")
     except Exception as e:
-        print(f"  ⚠️ Meta ad set fetch failed: {e}")
+        print(f"  ⚠️ Meta ad sets fetch failed: {e}")
         meta_adsets = []
         unavailable.append(f"Meta ad set data unavailable: {e}")
 
-    # ── Generate recommendations ──
-    print("💡 Generating recommendations...")
-    seven_day_rows = shopify_7d.get("rows", [])
-    seven_day_cols = shopify_7d.get("columns", [])
-    col_idx = {c: i for i, c in enumerate(seven_day_cols)}
-    prev_rows = [r for r in seven_day_rows
-                 if r and str(r[col_idx.get("day", 0)]) != date_str]
-    shopify_7d_avg = compute_7day_averages(prev_rows, {
-        "gross_sales":         col_idx.get("gross_sales", 1),
-        "net_sales":           col_idx.get("net_sales", 2),
-        "orders":              col_idx.get("orders", 3),
-        "average_order_value": col_idx.get("average_order_value", 4),
+    # 7-day averages from timeseries sales data, excluding today
+    print("💡 Computing 7-day averages...")
+    sales_rows = timeseries_data["sales"].get("rows", [])
+    sales_cols = timeseries_data["sales"].get("columns", [])
+    sci = {c: i for i, c in enumerate(sales_cols)}
+    prior_rows = [r for r in sales_rows if str(r[sci.get("day", 0)]) != date_str]
+    shopify_7d_avg = compute_7day_averages(prior_rows, {
+        "gross_sales":         sci.get("gross_sales", 1),
+        "net_sales":           sci.get("net_sales", 2),
+        "orders":              sci.get("orders", 3),
+        "average_order_value": sci.get("average_order_value", 4),
     })
 
-    recs, notes = generate_recommendations(
-        shopify_today, shopify_7d_avg, meta_campaigns, meta_adsets
-    )
-    urgent = [r for r in recs if r.startswith("🚨")]
+    meta_summary = aggregate_meta_campaigns(meta_campaigns)
+    recs, notes  = generate_recommendations(shopify_today, shopify_7d_avg, meta_campaigns)
 
-    # ── Update Google Sheet ──
     print("📊 Updating Google Sheet...")
     try:
-        sheet_url, gmail_svc, meta_summary, _ = update_spreadsheet(
-            date_str, shopify_today, shopify_7d,
-            shopify_prod_today, shopify_prod_7d,
-            meta_campaigns, meta_adsets,
-            recs, notes, unavailable
+        sheet_url, gmail_svc = run_dashboard(
+            date_str, shopify_today, timeseries_data,
+            shopify_today.get("top_products", {"rows": [], "columns": []}),
+            shopify_prod_7d, meta_campaigns, meta_adsets,
+            shopify_7d_avg, meta_summary, recs, unavailable,
         )
         print(f"  ✅ Sheet updated: {sheet_url}")
     except Exception as e:
         print(f"  ⚠️ Sheet update failed: {e}")
-        sheet_url   = "https://docs.google.com/spreadsheets (configure credentials)"
-        meta_summary = {"spend": 0, "impressions": 0, "clicks": 0,
-                        "purchases": 0, "ctr": 0, "cpa": 0, "roas": 0}
+        sheet_url = "https://docs.google.com/spreadsheets (configure GOOGLE_SA_CREDENTIALS)"
         try:
             _, _, gmail_svc = get_google_clients()
         except Exception as auth_err:
             print(f"  ⚠️ Gmail auth also failed: {auth_err}")
             return
 
-    # ── Send / draft email ──
     print("✉️  Sending email / creating draft...")
     try:
         send_or_draft_email(
             gmail_svc, sheet_url, date_str,
-            shopify_today, shopify_7d_avg, meta_summary, recs, urgent
+            shopify_today, shopify_7d_avg, meta_summary, recs,
         )
     except Exception as e:
         print(f"  ⚠️ Email step failed: {e}")
