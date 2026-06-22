@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Daily Store &amp; Ads Performance – 21 Jun 2026 | Dhirai</title>
+<style>
+  :root {
+    --green: #16a34a; --green-bg: #dcfce7;
+    --red:   #dc2626; --red-bg:   #fee2e2;
+    --blue:  #1d4ed8; --blue-bg:  #dbeafe;
+    --amber: #d97706; --amber-bg: #fef3c7;
+    --gray:  #374151; --border:   #e5e7eb;
+    --header-bg: #1e293b; --accent: #6366f1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #1e293b; font-size: 14px; }
+
+  /* NAV TABS */
+  nav { background: var(--header-bg); display: flex; gap: 2px; padding: 0 24px; overflow-x: auto; }
+  nav a { color: #94a3b8; text-decoration: none; padding: 14px 18px; font-size: 13px; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all .2s; }
+  nav a:hover, nav a.active { color: #fff; border-color: var(--accent); }
+
+  /* SECTION */
+  section { display: none; padding: 28px 28px 48px; max-width: 1400px; margin: 0 auto; }
+  section.active { display: block; }
+
+  /* HEADER */
+  .page-header { background: var(--header-bg); color: #fff; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+  .page-header .meta { font-size: 12px; color: #94a3b8; }
+
+  /* SECTION TITLE */
+  h2 { font-size: 17px; font-weight: 700; color: var(--header-bg); margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+  h3 { font-size: 15px; font-weight: 600; color: var(--gray); margin: 22px 0 10px; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; position: relative; overflow: hidden; }
+  .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--accent); }
+  .kpi.green::before { background: var(--green); }
+  .kpi.red::before   { background: var(--red); }
+  .kpi.amber::before { background: var(--amber); }
+  .kpi label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #64748b; font-weight: 600; }
+  .kpi .val  { font-size: 24px; font-weight: 700; color: var(--header-bg); margin: 6px 0 4px; }
+  .kpi .chg  { font-size: 12px; font-weight: 600; }
+  .kpi .chg.up  { color: var(--green); }
+  .kpi .chg.dn  { color: var(--red); }
+  .kpi .chg.neu { color: #64748b; }
+  .kpi .sub  { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  /* TABLE */
+  .tbl-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); background: #fff; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--header-bg); color: #fff; }
+  thead th { padding: 11px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .4px; white-space: nowrap; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #f1f5f9; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.bold { font-weight: 600; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge.up   { background: var(--green-bg); color: var(--green); }
+  .badge.dn   { background: var(--red-bg);   color: var(--red); }
+  .badge.neu  { background: #f1f5f9;          color: #475569; }
+  .badge.warn { background: var(--amber-bg);  color: var(--amber); }
+  .badge.star { background: #ede9fe;          color: #6d28d9; }
+
+  /* ALERT BOX */
+  .alert { border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+  .alert.warn  { background: var(--amber-bg); border-left: 4px solid var(--amber); }
+  .alert.good  { background: var(--green-bg); border-left: 4px solid var(--green); }
+  .alert.info  { background: var(--blue-bg);  border-left: 4px solid var(--blue); }
+  .alert.crit  { background: var(--red-bg);   border-left: 4px solid var(--red); }
+  .alert .icon { font-size: 18px; margin-top: -1px; }
+  .alert b    { display: block; margin-bottom: 3px; }
+
+  /* RECO CARDS */
+  .reco-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .reco { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .reco .num { font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 6px; }
+  .reco h4   { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .reco p    { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .reco .tag { font-size: 11px; font-weight: 600; color: var(--accent); margin-top: 8px; display: block; }
+
+  /* SPARKLINE PLACEHOLDER */
+  .trend { display: flex; align-items: flex-end; gap: 3px; height: 36px; }
+  .trend span { flex: 1; background: var(--accent); border-radius: 2px 2px 0 0; opacity: .7; }
+
+  /* FOOTER */
+  footer { text-align: center; padding: 20px; font-size: 11px; color: #94a3b8; border-top: 1px solid var(--border); }
+
+  @media (max-width: 640px) {
+    section { padding: 16px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>Daily Store &amp; Ads Performance</h1>
+    <div class="meta">Dhirai (dhirai.in) &nbsp;|&nbsp; Report Date: 21 June 2026 (IST) &nbsp;|&nbsp; Generated: 22 Jun 2026 by Claude</div>
+  </div>
+  <div style="font-size:28px;">📊</div>
+</div>
+
+<nav>
+  <a href="#" class="active" onclick="show('dashboard',this)">Dashboard</a>
+  <a href="#" onclick="show('shopify',this)">Shopify Daily Data</a>
+  <a href="#" onclick="show('meta',this)">Meta Ads Daily Data</a>
+  <a href="#" onclick="show('products',this)">Product Performance</a>
+  <a href="#" onclick="show('campaigns',this)">Campaign Performance</a>
+  <a href="#" onclick="show('notes',this)">Recommendations &amp; Notes</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 1 – DASHBOARD
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="dashboard" class="active">
+
+  <!-- ALERTS -->
+  <h2>Urgent Issues</h2>
+  <div class="alert crit">
+    <span class="icon">🚨</span>
+    <div><b>Inventory Warning – Dhurandhar Black Short Kurta Set</b>Only 2,194 units remaining with a 52.3% sell-through rate — highest of any product. Risk of stockout. Restock immediately.</div>
+  </div>
+  <div class="alert warn">
+    <span class="icon">⚠️</span>
+    <div><b>Meta Ads – Narrow Audience Alert</b>"Black and multiple" ad set audience is critically small (14,700–17,400 estimated reach). Meta is flagging active delivery risk. Expand or A/B test with Advantage+ audience.</div>
+  </div>
+  <div class="alert warn">
+    <span class="icon">⚠️</span>
+    <div><b>Checkout Tracking Discrepancy</b>Shopify sessions show 0 completed checkouts on Jun 21, yet 79 orders were placed. Investigate pixel / checkout tracking or channel attribution issues.</div>
+  </div>
+
+  <!-- KPIs -->
+  <h2>Executive Summary — 21 June 2026</h2>
+  <div class="kpi-grid">
+    <div class="kpi green">
+      <label>Gross Sales</label>
+      <div class="val">₹1,93,418</div>
+      <div class="chg up">▲ +66.0% vs 7d avg</div>
+      <div class="sub">7d avg ₹1,16,588</div>
+    </div>
+    <div class="kpi green">
+      <label>Net Sales</label>
+      <div class="val">₹1,92,563</div>
+      <div class="chg up">▲ +69.5% vs 7d avg</div>
+      <div class="sub">7d avg ₹1,13,667</div>
+    </div>
+    <div class="kpi green">
+      <label>Orders</label>
+      <div class="val">79</div>
+      <div class="chg up">▲ +70.6% vs 7d avg</div>
+      <div class="sub">7d avg 46 orders/day</div>
+    </div>
+    <div class="kpi">
+      <label>Avg Order Value</label>
+      <div class="val">₹2,438</div>
+      <div class="chg dn">▼ −1.9% vs 7d avg</div>
+      <div class="sub">7d avg ₹2,485</div>
+    </div>
+    <div class="kpi green">
+      <label>Meta ROAS</label>
+      <div class="val">3.71×</div>
+      <div class="chg up">▲ +24.9% vs 7d avg</div>
+      <div class="sub">7d avg 2.97×</div>
+    </div>
+    <div class="kpi green">
+      <label>Ad Purchases</label>
+      <div class="val">78</div>
+      <div class="chg up">▲ +74.5% vs 7d avg</div>
+      <div class="sub">7d avg 44.7/day</div>
+    </div>
+    <div class="kpi green">
+      <label>Cost per Purchase</label>
+      <div class="val">₹660</div>
+      <div class="chg up">▼ −19.8% vs 7d avg</div>
+      <div class="sub">7d avg ₹823</div>
+    </div>
+    <div class="kpi">
+      <label>Ad Spend</label>
+      <div class="val">₹51,486</div>
+      <div class="chg dn">▲ +39.9% vs 7d avg</div>
+      <div class="sub">7d avg ₹36,796/day</div>
+    </div>
+    <div class="kpi">
+      <label>Sessions</label>
+      <div class="val">3,862</div>
+      <div class="chg up">▲ +18.9% vs 7d avg</div>
+      <div class="sub">7d avg 3,248/day</div>
+    </div>
+    <div class="kpi green">
+      <label>Returns</label>
+      <div class="val">₹0</div>
+      <div class="chg up">▼ −100% vs 7d avg</div>
+      <div class="sub">7d avg ₹1,428</div>
+    </div>
+  </div>
+
+  <!-- 7-DAY TREND -->
+  <h2>7-Day Trend (14–21 Jun)</h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Gross Sales</th><th>Orders</th><th>AOV</th><th>Sessions</th><th>Meta Spend</th><th>Meta ROAS</th><th>Returns</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>14 Jun</td><td class="num">₹1,03,853</td><td class="num">44</td><td class="num">₹2,296</td><td class="num">3,276</td><td class="num">—</td><td class="num">—</td><td class="num">₹0</td></tr>
+        <tr><td>15 Jun</td><td class="num">₹1,13,303</td><td class="num">42</td><td class="num">₹2,690</td><td class="num">3,557</td><td class="num">—</td><td class="num">—</td><td class="num">₹0</td></tr>
+        <tr><td>16 Jun</td><td class="num">₹1,30,993</td><td class="num">50</td><td class="num">₹2,575</td><td class="num">3,337</td><td class="num">—</td><td class="num">—</td><td class="num">₹0</td></tr>
+        <tr><td>17 Jun</td><td class="num">₹1,28,064</td><td class="num">51</td><td class="num">₹2,435</td><td class="num">3,325</td><td class="num">—</td><td class="num">—</td><td class="num">₹0</td></tr>
+        <tr><td>18 Jun</td><td class="num">₹1,06,752</td><td class="num">43</td><td class="num">₹2,472</td><td class="num">3,244</td><td class="num">—</td><td class="num">—</td><td class="num">₹9,996</td></tr>
+        <tr><td>19 Jun</td><td class="num">₹76,168</td><td class="num">31</td><td class="num">₹2,443</td><td class="num">2,796</td><td class="num">—</td><td class="num">—</td><td class="num">₹0</td></tr>
+        <tr><td>20 Jun</td><td class="num">₹1,56,985</td><td class="num">63</td><td class="num">₹2,487</td><td class="num">3,199</td><td class="num">—</td><td class="num">—</td><td class="num">₹0</td></tr>
+        <tr style="background:#dcfce7;font-weight:700;">
+          <td>21 Jun ★</td><td class="num bold">₹1,93,418</td><td class="num bold">79</td><td class="num">₹2,438</td><td class="num">3,862</td><td class="num bold">₹51,486</td><td class="num bold">3.71×</td><td class="num">₹0</td>
+        </tr>
+        <tr style="background:#f1f5f9;color:#475569;">
+          <td><i>7d Avg (14-20)</i></td><td class="num"><i>₹1,16,588</i></td><td class="num"><i>46</i></td><td class="num"><i>₹2,485</i></td><td class="num"><i>3,248</i></td><td class="num"><i>₹36,796</i></td><td class="num"><i>2.97×</i></td><td class="num"><i>₹1,428</i></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- KEY WINS -->
+  <h2>Key Wins</h2>
+  <div class="alert good">
+    <span class="icon">🏆</span>
+    <div>
+      <b>Best Sales Day of the Week</b>
+      ₹1,93,418 gross sales — 66% above the 7-day average. 79 orders vs avg 46. Strong demand for Rayon and Cotton co-ord sets.
+    </div>
+  </div>
+  <div class="alert good">
+    <span class="icon">🎯</span>
+    <div>
+      <b>Meta Ads ROAS Surge</b>
+      ROAS hit 3.71× (+25% vs avg 2.97×). "Karigar" ad set delivered ROAS of 14.76× — exceptional efficiency.
+    </div>
+  </div>
+  <div class="alert good">
+    <span class="icon">💰</span>
+    <div>
+      <b>Zero Returns &amp; Lower Discounts</b>
+      ₹0 in returns (7d avg ₹1,428) and discounts down 43%. Higher-margin day across the board.
+    </div>
+  </div>
+
+  <!-- KEY ISSUES -->
+  <h2>Key Issues</h2>
+  <div class="alert crit">
+    <span class="icon">📦</span>
+    <div><b>Stockout Risk – Dhurandhar Kurta</b> Only 2,194 units left. At current demand, could sell out within days. Restock now.</div>
+  </div>
+  <div class="alert warn">
+    <span class="icon">📉</span>
+    <div><b>ASC Campaign Underperforming</b> "Dhirai Scale - ASC" spent ₹21,497 (42% of total spend) but only delivered ROAS 2.35× — lowest of all campaigns. Budget reallocation needed.</div>
+  </div>
+  <div class="alert warn">
+    <span class="icon">🛒</span>
+    <div><b>Checkout Tracking Gap</b> Sessions show 1 checkout reached and 0 completed, yet 79 orders exist. Shopify session tracking may not capture all purchase paths (Instagram checkout, WhatsApp, etc.).</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 2 – SHOPIFY DAILY DATA
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="shopify">
+  <h2>Shopify Daily Data — 21 June 2026</h2>
+
+  <h3>Sales &amp; Revenue Summary</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Yesterday (21 Jun)</th><th>7-Day Avg (14–20 Jun)</th><th>Change</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="bold">Gross Sales</td><td class="num">₹1,93,418.00</td><td class="num">₹1,16,588.30</td><td class="num">+₹76,829.70</td><td><span class="badge up">+66.0%</span></td></tr>
+        <tr><td class="bold">Net Sales</td><td class="num">₹1,92,563.35</td><td class="num">₹1,13,667.21</td><td class="num">+₹78,896.14</td><td><span class="badge up">+69.5%</span></td></tr>
+        <tr><td class="bold">Orders</td><td class="num">79</td><td class="num">46.3</td><td class="num">+32.7</td><td><span class="badge up">+70.6%</span></td></tr>
+        <tr><td class="bold">Avg Order Value</td><td class="num">₹2,437.51</td><td class="num">₹2,485.45</td><td class="num">−₹47.94</td><td><span class="badge dn">−1.9%</span></td></tr>
+        <tr><td class="bold">Returns</td><td class="num">₹0</td><td class="num">₹1,428.00</td><td class="num">−₹1,428</td><td><span class="badge up">−100%</span></td></tr>
+        <tr><td class="bold">Discounts</td><td class="num">−₹854.65</td><td class="num">−₹1,492.60</td><td class="num">+₹637.95</td><td><span class="badge up">−42.7%</span></td></tr>
+        <tr><td class="bold">Shipping Charges</td><td class="num">₹0</td><td class="num">₹54.46</td><td class="num">—</td><td><span class="badge neu">—</span></td></tr>
+        <tr><td class="bold">Total Sales</td><td class="num">₹1,92,563.35</td><td class="num">₹1,13,771.53</td><td class="num">+₹78,791.82</td><td><span class="badge up">+69.3%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Session &amp; Conversion Funnel</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>21 Jun</th><th>7-Day Avg</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>Sessions</td><td class="num">3,862</td><td class="num">3,248</td><td><span class="badge up">+18.9%</span></td></tr>
+        <tr><td>Cart Additions</td><td class="num">237</td><td class="num">174</td><td><span class="badge up">+36.2%</span></td></tr>
+        <tr><td>Reached Checkout</td><td class="num">1</td><td class="num">1.9</td><td><span class="badge dn">−47.4%</span></td></tr>
+        <tr><td>Completed Checkout (tracked)</td><td class="num">0</td><td class="num">0.3</td><td><span class="badge warn">⚠ 0 tracked</span></td></tr>
+        <tr><td>Cart-to-Session Rate</td><td class="num">6.1%</td><td class="num">5.4%</td><td><span class="badge up">+13.0%</span></td></tr>
+        <tr><td>Note</td><td colspan="3" style="color:#d97706;font-size:12px;">⚠ 79 orders placed vs 0 session-tracked completions — likely channel mismatch (Meta redirects, Instagram checkout, direct links). Verify pixel/checkout events.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Daily Sales — Full 8-Day Record</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Gross Sales</th><th>Net Sales</th><th>Orders</th><th>AOV</th><th>Returns</th><th>Discounts</th><th>Total Sales</th></tr></thead>
+      <tbody>
+        <tr><td>14 Jun</td><td class="num">₹1,03,853.00</td><td class="num">₹1,01,010.26</td><td class="num">44</td><td class="num">₹2,296</td><td class="num">₹0</td><td class="num">−₹2,842.74</td><td class="num">₹1,01,010.26</td></tr>
+        <tr><td>15 Jun</td><td class="num">₹1,13,303.00</td><td class="num">₹1,12,978.15</td><td class="num">42</td><td class="num">₹2,690</td><td class="num">₹0</td><td class="num">−₹324.85</td><td class="num">₹1,12,978.15</td></tr>
+        <tr><td>16 Jun</td><td class="num">₹1,30,993.00</td><td class="num">₹1,28,768.88</td><td class="num">50</td><td class="num">₹2,575</td><td class="num">₹0</td><td class="num">−₹2,224.12</td><td class="num">₹1,28,768.88</td></tr>
+        <tr><td>17 Jun</td><td class="num">₹1,28,063.80</td><td class="num">₹1,24,183.41</td><td class="num">51</td><td class="num">₹2,435</td><td class="num">₹0</td><td class="num">−₹3,880.39</td><td class="num">₹1,24,564.61</td></tr>
+        <tr><td>18 Jun</td><td class="num">₹1,06,752.00</td><td class="num">₹96,281.20</td><td class="num">43</td><td class="num">₹2,472</td><td class="num">₹9,996</td><td class="num">−₹474.80</td><td class="num">₹96,281.20</td></tr>
+        <tr><td>19 Jun</td><td class="num">₹76,168.00</td><td class="num">₹75,738.20</td><td class="num">31</td><td class="num">₹2,443</td><td class="num">₹0</td><td class="num">−₹429.80</td><td class="num">₹75,738.20</td></tr>
+        <tr><td>20 Jun</td><td class="num">₹1,56,985.30</td><td class="num">₹1,56,710.40</td><td class="num">63</td><td class="num">₹2,487</td><td class="num">₹0</td><td class="num">−₹274.90</td><td class="num">₹1,57,061.10</td></tr>
+        <tr style="background:#dcfce7;font-weight:700;">
+          <td>21 Jun ★</td><td class="num">₹1,93,418.00</td><td class="num">₹1,92,563.35</td><td class="num">79</td><td class="num">₹2,438</td><td class="num">₹0</td><td class="num">−₹854.65</td><td class="num">₹1,92,563.35</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 3 – META ADS DAILY DATA
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="meta">
+  <h2>Meta Ads Daily Data — 21 June 2026 | Account: Dhirai (979830497515712)</h2>
+
+  <h3>Account-Level Summary</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Yesterday (21 Jun)</th><th>7-Day Avg (14–20 Jun)</th><th>Change</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="bold">Amount Spent</td><td class="num">₹51,486.10</td><td class="num">₹36,795.99</td><td class="num">+₹14,690</td><td><span class="badge dn">+39.9%</span></td></tr>
+        <tr><td class="bold">Impressions</td><td class="num">2,57,491</td><td class="num">1,57,714</td><td class="num">+99,777</td><td><span class="badge up">+63.3%</span></td></tr>
+        <tr><td class="bold">Reach</td><td class="num">2,10,576</td><td class="num">82,963</td><td class="num">+1,27,613</td><td><span class="badge up">+153.8%</span></td></tr>
+        <tr><td class="bold">Clicks</td><td class="num">5,700</td><td class="num">4,702</td><td class="num">+998</td><td><span class="badge up">+21.2%</span></td></tr>
+        <tr><td class="bold">CTR</td><td class="num">2.21%</td><td class="num">2.98%</td><td class="num">−0.77pp</td><td><span class="badge dn">−25.8%</span></td></tr>
+        <tr><td class="bold">CPC</td><td class="num">₹9.03</td><td class="num">₹7.83</td><td class="num">+₹1.20</td><td><span class="badge dn">+15.3%</span></td></tr>
+        <tr><td class="bold">CPM</td><td class="num">₹199.95</td><td class="num">₹233.31</td><td class="num">−₹33.36</td><td><span class="badge up">−14.3%</span></td></tr>
+        <tr><td class="bold">Purchases (Meta)</td><td class="num">78</td><td class="num">44.7</td><td class="num">+33.3</td><td><span class="badge up">+74.5%</span></td></tr>
+        <tr><td class="bold">Cost per Purchase</td><td class="num">₹660.08</td><td class="num">₹822.91</td><td class="num">−₹162.83</td><td><span class="badge up">−19.8%</span></td></tr>
+        <tr><td class="bold">ROAS</td><td class="num">3.71×</td><td class="num">2.97×</td><td class="num">+0.74×</td><td><span class="badge up">+24.9%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert info">
+    <span class="icon">ℹ️</span>
+    <div><b>Reach Spike (+154%)</b> Reach nearly tripled vs the 7-day average. This could indicate new audiences opened up (possibly via ASC or Meta's automated audience expansion) or a budget push. Monitor frequency to avoid creative fatigue.</div>
+  </div>
+
+  <h3>7-Day Account Totals (14–20 Jun, for reference)</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>7-Day Total</th><th>Daily Avg</th></tr></thead>
+      <tbody>
+        <tr><td>Amount Spent</td><td class="num">₹2,57,571.93</td><td class="num">₹36,795.99</td></tr>
+        <tr><td>Impressions</td><td class="num">11,03,998</td><td class="num">1,57,714</td></tr>
+        <tr><td>Reach</td><td class="num">5,80,741</td><td class="num">82,963</td></tr>
+        <tr><td>Clicks</td><td class="num">32,912</td><td class="num">4,702</td></tr>
+        <tr><td>Purchases</td><td class="num">313</td><td class="num">44.7</td></tr>
+        <tr><td>ROAS</td><td class="num">2.97×</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 4 – PRODUCT PERFORMANCE
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="products">
+  <h2>Product Performance — 21 June 2026</h2>
+
+  <h3>Top Selling Products by Revenue</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Product</th><th>Gross Sales</th><th>Net Sales</th><th>Orders</th><th>Revenue Share</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="bold">Ira Rayon Co-ord Set</td><td class="num">₹77,469</td><td class="num">₹77,094.15</td><td class="num">31</td><td><span class="badge star">40.1%</span></td></tr>
+        <tr><td>2</td><td class="bold">The Essential – White Cotton Shirt &amp; Pant</td><td class="num">₹28,586</td><td class="num">₹28,486.05</td><td class="num">14</td><td><span class="badge up">14.8%</span></td></tr>
+        <tr><td>3</td><td class="bold">Embroidered Rayon Kurti with Farshi Salwar</td><td class="num">₹16,994</td><td class="num">₹16,714.10</td><td class="num">6</td><td><span class="badge neu">8.8%</span></td></tr>
+        <tr><td>4</td><td class="bold">Inayat — Power Pastel Cotton Shirt &amp; Trouser</td><td class="num">₹8,096</td><td class="num">₹8,096.00</td><td class="num">4</td><td><span class="badge neu">4.2%</span></td></tr>
+        <tr><td>5</td><td class="bold">Black Cotton Kurta Pant Set</td><td class="num">₹7,996</td><td class="num">₹7,896.05</td><td class="num">4</td><td><span class="badge neu">4.1%</span></td></tr>
+        <tr><td>6</td><td class="bold">Dhurandhar Black Short Kurta Set</td><td class="num">₹6,297</td><td class="num">₹6,297.00</td><td class="num">3</td><td><span class="badge neu">3.3%</span></td></tr>
+        <tr><td>7</td><td class="bold">Shanaya — Chocolate Brown Shirt &amp; White Trouser</td><td class="num">₹6,097</td><td class="num">₹6,097.00</td><td class="num">3</td><td><span class="badge neu">3.2%</span></td></tr>
+        <tr><td>8</td><td class="bold">Adira - Premium Breathable Soft Fabric Salwar</td><td class="num">₹5,998</td><td class="num">₹5,998.00</td><td class="num">2</td><td><span class="badge neu">3.1%</span></td></tr>
+        <tr><td>9</td><td class="bold">Ruhani – Cream Premium Rayon Co-ord Set</td><td class="num">₹4,998</td><td class="num">₹4,998.00</td><td class="num">2</td><td><span class="badge neu">2.6%</span></td></tr>
+        <tr><td>10</td><td class="bold">Pink Zehra Co-ord Set</td><td class="num">₹4,998</td><td class="num">₹4,998.00</td><td class="num">2</td><td><span class="badge neu">2.6%</span></td></tr>
+        <tr style="background:#f1f5f9;">
+          <td colspan="2"><b>Top 10 Total</b></td><td class="num bold">₹1,67,529</td><td class="num bold">₹1,66,675</td><td class="num bold">71</td><td><span class="badge up">86.7%</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Inventory Snapshot — Risk Assessment</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Product</th><th>Remaining Units</th><th>All-Time Units Sold</th><th>Sell-Through Rate</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td class="bold">Dhurandhar Black Short Kurta Set</td><td class="num" style="color:#dc2626;font-weight:700;">2,194</td><td class="num">2,407</td><td class="num">52.3%</td><td><span class="badge dn">🚨 HIGH</span></td></tr>
+        <tr><td>Elegant Pakistani-Style Mauve Kurta Set</td><td class="num">3,532</td><td class="num">481</td><td class="num">12.0%</td><td><span class="badge warn">MEDIUM</span></td></tr>
+        <tr><td>The Zoya Relaxed Set</td><td class="num">3,811</td><td class="num">189</td><td class="num">4.7%</td><td><span class="badge warn">MEDIUM</span></td></tr>
+        <tr><td>Inayat — Power Pastel Cotton</td><td class="num">7,573</td><td class="num">496</td><td class="num">6.2%</td><td><span class="badge neu">LOW</span></td></tr>
+        <tr><td>Shanaya — Chocolate Brown</td><td class="num">7,812</td><td class="num">186</td><td class="num">2.3%</td><td><span class="badge neu">LOW</span></td></tr>
+        <tr><td>Black Cotton Kurta Pant Set</td><td class="num">62,204</td><td class="num">4,538</td><td class="num">6.8%</td><td><span class="badge neu">LOW</span></td></tr>
+        <tr><td>The Essential White Cotton</td><td class="num">37,682</td><td class="num">4,771</td><td class="num">11.2%</td><td><span class="badge neu">LOW</span></td></tr>
+        <tr><td>Ira Rayon Co-ord Set</td><td class="num">56,706</td><td class="num">255</td><td class="num">0.5%</td><td><span class="badge neu">LOW</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 5 – CAMPAIGN PERFORMANCE
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="campaigns">
+  <h2>Campaign &amp; Ad Set Performance — 21 June 2026</h2>
+
+  <h3>Campaign Summary</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Campaign</th><th>Status</th><th>Spend</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>CPM</th><th>Purchases</th><th>CPA</th><th>ROAS</th><th>Rating</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="bold">New Campaign – for recovery</td>
+          <td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹14,299</td><td class="num">59,211</td><td class="num">1,040</td>
+          <td class="num">1.76%</td><td class="num">₹13.75</td><td class="num">₹241.49</td>
+          <td class="num bold" style="color:var(--green);">32</td>
+          <td class="num" style="color:var(--green);">₹446.85</td>
+          <td class="num bold" style="color:var(--green);">5.65×</td>
+          <td><span class="badge star">★ BEST</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Retargeting – new</td>
+          <td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹5,891</td><td class="num">16,025</td><td class="num">519</td>
+          <td class="num">3.24%</td><td class="num">₹11.35</td><td class="num">₹367.63</td>
+          <td class="num">11</td><td class="num">₹535.58</td><td class="num bold" style="color:var(--green);">5.40×</td>
+          <td><span class="badge up">STRONG</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Black DHURANDHAR</td>
+          <td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹9,799</td><td class="num">48,207</td><td class="num">1,525</td>
+          <td class="num">3.16%</td><td class="num">₹6.43</td><td class="num">₹203.26</td>
+          <td class="num">12</td><td class="num">₹816.54</td><td class="num">2.89×</td>
+          <td><span class="badge neu">AVG</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Dhirai Scale – ASC</td>
+          <td><span class="badge up">ACTIVE</span></td>
+          <td class="num" style="color:var(--amber);">₹21,497</td><td class="num">1,34,048</td><td class="num">2,616</td>
+          <td class="num">1.95%</td><td class="num">₹8.22</td><td class="num">₹160.37</td>
+          <td class="num">23</td>
+          <td class="num" style="color:var(--red);">₹934.66</td>
+          <td class="num" style="color:var(--red);">2.35×</td>
+          <td><span class="badge dn">WEAK</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert warn">
+    <span class="icon">💸</span>
+    <div><b>Budget Efficiency Issue</b> ASC campaign consumed 41.7% of total spend (₹21,497) but generated the lowest ROAS (2.35×). The "New Campaign – for recovery" spent ₹14,299 and drove 38.5% more purchases with 2.4× better ROAS.</div>
+  </div>
+
+  <h3>Ad Set Performance (Ranked by ROAS)</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Ad Set</th><th>Status</th><th>Spend</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>Purchases</th><th>CPA</th><th>ROAS</th><th>Flag</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="bold">Karigar</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹762.61</td><td class="num">85</td><td class="num">2.89%</td><td class="num">₹8.97</td>
+          <td class="num bold" style="color:var(--green);">4</td>
+          <td class="num" style="color:var(--green);">₹190.65</td>
+          <td class="num bold" style="color:var(--green);">14.76×</td>
+          <td><span class="badge star">★ SCALE NOW</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Black and multiple</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹2,001.67</td><td class="num">223</td><td class="num">3.58%</td><td class="num">₹8.98</td>
+          <td class="num">3</td><td class="num">₹667.22</td><td class="num">5.84×</td>
+          <td><span class="badge warn">Narrow Audience</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Rayon</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹13,196</td><td class="num">941</td><td class="num">1.75%</td><td class="num">₹14.02</td>
+          <td class="num">28</td><td class="num">₹471.29</td><td class="num">5.26×</td>
+          <td><span class="badge up">STRONG</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Best performing ads</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹3,890</td><td class="num">296</td><td class="num">3.02%</td><td class="num">₹13.14</td>
+          <td class="num">8</td><td class="num">₹486.21</td><td class="num">5.17×</td>
+          <td><span class="badge up">STRONG</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Karigari</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹1,163.54</td><td class="num">82</td><td class="num">1.84%</td><td class="num">₹14.19</td>
+          <td class="num">2</td><td class="num">₹581.77</td><td class="num">4.69×</td>
+          <td><span class="badge up">GOOD</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Broad</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹9,799</td><td class="num">1,525</td><td class="num">3.16%</td><td class="num">₹6.43</td>
+          <td class="num">12</td><td class="num">₹816.54</td><td class="num">2.89×</td>
+          <td><span class="badge neu">AVG</span></td>
+        </tr>
+        <tr>
+          <td class="bold">New Sales Ad Set</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹20,334</td><td class="num">2,534</td><td class="num">1.96%</td><td class="num">₹8.02</td>
+          <td class="num">21</td><td class="num">₹968.27</td><td class="num">2.21×</td>
+          <td><span class="badge dn">WEAK</span></td>
+        </tr>
+        <tr>
+          <td class="bold">White Dhurandhar</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹241.51</td><td class="num">11</td><td class="num">0.89%</td><td class="num">₹21.96</td>
+          <td class="num" style="color:var(--red);">0</td><td class="num" style="color:var(--red);">—</td><td class="num" style="color:var(--red);">—</td>
+          <td><span class="badge dn">⛔ PAUSE</span></td>
+        </tr>
+        <tr>
+          <td class="bold">Black Dhurandhar</td><td><span class="badge up">ACTIVE</span></td>
+          <td class="num">₹98.88</td><td class="num">3</td><td class="num">0.26%</td><td class="num">₹32.96</td>
+          <td class="num" style="color:var(--red);">0</td><td class="num" style="color:var(--red);">—</td><td class="num" style="color:var(--red);">—</td>
+          <td><span class="badge dn">⛔ PAUSE</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 6 – RECOMMENDATIONS & NOTES
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="notes">
+  <h2>Recommendations &amp; Actions — For 22 June 2026</h2>
+
+  <div class="reco-list">
+    <div class="reco">
+      <div class="num">01</div>
+      <h4>Scale "Karigar" Ad Set Aggressively</h4>
+      <p>ROAS 14.76× with CPA ₹191 on ₹763 spend. This is exceptional efficiency. Increase daily budget 3–5× immediately. Test additional creatives under this ad set to sustain performance.</p>
+      <span class="tag">📈 ACTION: Increase Karigar budget today</span>
+    </div>
+    <div class="reco">
+      <div class="num">02</div>
+      <h4>Scale "New Campaign – for recovery"</h4>
+      <p>ROAS 5.65× with 32 purchases and CPA ₹447 — best campaign overall. Allocate more budget from the underperforming ASC campaign. "Rayon" ad set (5.26× ROAS) within it is particularly strong.</p>
+      <span class="tag">📈 ACTION: Increase budget by 30–50%</span>
+    </div>
+    <div class="reco">
+      <div class="num">03</div>
+      <h4>Reduce or Restructure ASC Campaign Budget</h4>
+      <p>"Dhirai Scale – ASC" consumed 42% of total spend at only 2.35× ROAS. Reduce its daily budget and redistribute to campaigns above 4× ROAS. Consider refreshing creatives or targeting in ASC.</p>
+      <span class="tag">💰 ACTION: Cut ASC budget by 25–30%</span>
+    </div>
+    <div class="reco">
+      <div class="num">04</div>
+      <h4>Pause White &amp; Black Dhurandhar Ad Sets</h4>
+      <p>Both ad sets show 0 purchases on Jun 21 with poor CTR (0.89% and 0.26%). "Black Dhurandhar" has CPC of ₹33 — extremely high. Pause or replace creative immediately to stop budget waste.</p>
+      <span class="tag">⛔ ACTION: Pause both ad sets now</span>
+    </div>
+    <div class="reco">
+      <div class="num">05</div>
+      <h4>Expand "Black and multiple" Audience</h4>
+      <p>Meta flagged this ad set as having a narrow audience (14,700–17,400 people). Despite 5.84× ROAS, limited reach will reduce delivery. Switch to Advantage+ audience or broaden targeting to avoid under-delivery.</p>
+      <span class="tag">🎯 ACTION: Widen audience today</span>
+    </div>
+    <div class="reco">
+      <div class="num">06</div>
+      <h4>Urgent: Restock Dhurandhar Black Short Kurta</h4>
+      <p>Only 2,194 units remain with 52.3% sell-through — highest inventory risk in the catalog. At 79 orders/day with this product in the mix, stockout risk is real within the week. Contact supplier immediately.</p>
+      <span class="tag">📦 ACTION: Place restock order today</span>
+    </div>
+    <div class="reco">
+      <div class="num">07</div>
+      <h4>Investigate Checkout Tracking Discrepancy</h4>
+      <p>Sessions show 0 completed checkouts on Jun 21, yet 79 orders were recorded. Likely customers are buying via Instagram, WhatsApp, or other non-tracked paths. Audit Shopify pixel, verify Meta Pixel purchase events, and consider adding UTM tracking.</p>
+      <span class="tag">🔍 ACTION: Audit pixel &amp; checkout events</span>
+    </div>
+  </div>
+
+  <h2>Data Availability Notes</h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Data Point</th><th>Status</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Shopify Gross/Net Sales</td><td><span class="badge up">✓ Available</span></td><td>Full data via ShopifyQL</td></tr>
+        <tr><td>Shopify Orders &amp; AOV</td><td><span class="badge up">✓ Available</span></td><td>Full data via ShopifyQL</td></tr>
+        <tr><td>Shopify Returns &amp; Discounts</td><td><span class="badge up">✓ Available</span></td><td>Full data via ShopifyQL</td></tr>
+        <tr><td>Shopify Sessions &amp; Funnel</td><td><span class="badge up">✓ Available</span></td><td>Note: checkout completion tracking discrepancy (see Rec #7)</td></tr>
+        <tr><td>Shopify Top Products</td><td><span class="badge up">✓ Available</span></td><td>Top 10 by gross sales</td></tr>
+        <tr><td>Shopify Inventory</td><td><span class="badge up">✓ Available</span></td><td>All-time sell-through; not day-specific</td></tr>
+        <tr><td>Shopify Abandoned Checkouts</td><td><span class="badge warn">⚠ Not Available</span></td><td>Not surfaced in ShopifyQL; check Shopify admin directly</td></tr>
+        <tr><td>Shopify Failed Payments</td><td><span class="badge warn">⚠ Not Available</span></td><td>Not surfaced in ShopifyQL; check Shopify admin directly</td></tr>
+        <tr><td>Meta Account-Level Metrics</td><td><span class="badge up">✓ Available</span></td><td>Spend, impressions, reach, clicks, CTR, CPC, CPM, ROAS, purchases</td></tr>
+        <tr><td>Meta Campaign Performance</td><td><span class="badge up">✓ Available</span></td><td>All 4 active campaigns</td></tr>
+        <tr><td>Meta Ad Set Performance</td><td><span class="badge up">✓ Available</span></td><td>All 9 active ad sets</td></tr>
+        <tr><td>Meta Ad-Level Performance</td><td><span class="badge warn">⚠ Not Fetched</span></td><td>Ad-level data available but not included in this run to keep report concise</td></tr>
+        <tr><td>Google Sheets Integration</td><td><span class="badge warn">⚠ Not Available</span></td><td>Google Sheets API not available in this session. This HTML report serves as the equivalent dashboard. Data will persist in the GitHub repo at atulchauhan7/claude-routines.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  Daily Store &amp; Ads Performance Sheet &nbsp;|&nbsp; Dhirai (dhirai.in) &nbsp;|&nbsp; Report Date: 21 June 2026 &nbsp;|&nbsp; Generated by Claude Code Routine &nbsp;|&nbsp; Data Sources: Shopify Admin API · Meta Marketing API
+</footer>
+
+<script>
+  function show(id, el) {
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+    event.preventDefault();
+  }
+</script>
+</body>
+</html>
