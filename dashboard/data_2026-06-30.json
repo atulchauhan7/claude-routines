@@ -1,0 +1,90 @@
+{
+  "date": "2026-06-30",
+  "window_7d_start": "2026-06-23",
+  "window_7d_end": "2026-06-29",
+  "shopify": {
+    "daily_history": [
+      {"date": "2026-06-23", "gross_sales": 157134, "net_sales": 154770.78, "orders": 61, "aov": 2537.23, "discounts": -2363.22, "returns": 0, "shipping": 0, "taxes": 0, "total_sales": 154770.78, "sessions": 3606, "cart_adds": 243, "reached_checkout": 0, "completed_checkout": 0, "conversion_rate": 0.0},
+      {"date": "2026-06-24", "gross_sales": 131811.25, "net_sales": 130054.88, "orders": 52, "aov": 2501.06, "discounts": -1756.37, "returns": 0, "shipping": 0, "taxes": 533.75, "total_sales": 130588.63, "sessions": 3097, "cart_adds": 187, "reached_checkout": 3, "completed_checkout": 1, "conversion_rate": 0.0003},
+      {"date": "2026-06-25", "gross_sales": 136043, "net_sales": 130120.71, "orders": 49, "aov": 2655.52, "discounts": -5922.29, "returns": 0, "shipping": 0, "taxes": 0, "total_sales": 130120.71, "sessions": 2993, "cart_adds": 176, "reached_checkout": 1, "completed_checkout": 0, "conversion_rate": 0.0},
+      {"date": "2026-06-26", "gross_sales": 165729, "net_sales": 165079.25, "orders": 68, "aov": 2427.64, "discounts": -649.75, "returns": 0, "shipping": 0, "taxes": 0, "total_sales": 165079.25, "sessions": 3448, "cart_adds": 234, "reached_checkout": 1, "completed_checkout": 0, "conversion_rate": 0.0},
+      {"date": "2026-06-27", "gross_sales": 163386, "net_sales": 135020.7, "orders": 62, "aov": 2627.64, "discounts": -472.3, "returns": -27893, "shipping": 0, "taxes": 0, "total_sales": 135020.7, "sessions": 2835, "cart_adds": 167, "reached_checkout": 0, "completed_checkout": 0, "conversion_rate": 0.0},
+      {"date": "2026-06-28", "gross_sales": 143639, "net_sales": 143174.25, "orders": 56, "aov": 2556.68, "discounts": -464.75, "returns": 0, "shipping": 0, "taxes": 0, "total_sales": 143174.25, "sessions": 3662, "cart_adds": 214, "reached_checkout": 1, "completed_checkout": 0, "conversion_rate": 0.0},
+      {"date": "2026-06-29", "gross_sales": 120251, "net_sales": 112962.15, "orders": 47, "aov": 2550.24, "discounts": -389.85, "returns": -6899, "shipping": 0, "taxes": 0, "total_sales": 112962.15, "sessions": 3249, "cart_adds": 159, "reached_checkout": 0, "completed_checkout": 0, "conversion_rate": 0.0},
+      {"date": "2026-06-30", "gross_sales": 170229, "net_sales": 167376.63, "orders": 57, "aov": 2936.43, "discounts": -2852.37, "returns": 0, "shipping": 0, "taxes": 0, "total_sales": 167376.63, "sessions": 3107, "cart_adds": 184, "reached_checkout": 3, "completed_checkout": 0, "conversion_rate": 0.0}
+    ],
+    "top_products_yesterday": [
+      {"product": "Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants", "gross_sales": 59976, "net_sales": 59976, "orders": 24, "units_sold": 24, "ending_inventory": 15560},
+      {"product": "Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women", "gross_sales": 14195, "net_sales": 14195, "orders": 2, "units_sold": 5, "ending_inventory": 14642},
+      {"product": "The Dhurandhar Black Short Kurta Set | A Dhirai Essential", "gross_sales": 12594, "net_sales": 12489.05, "orders": 6, "units_sold": 6, "ending_inventory": 2154},
+      {"product": "Eclipse Grace Premium Crepe Salwar Suit set | DHIRAI", "gross_sales": 11996, "net_sales": 11996, "orders": 4, "units_sold": 4, "ending_inventory": 339},
+      {"product": "\"Inayat\" — Power Pastel Cotton Shirt & Trouser Co-ord Set", "gross_sales": 10095, "net_sales": 9990.05, "orders": 5, "units_sold": 5, "ending_inventory": 7556},
+      {"product": "Sage Aura cotton Kurta Set | DHIRAI", "gross_sales": 8396, "net_sales": 7522.81, "orders": 4, "units_sold": 4, "ending_inventory": 375},
+      {"product": "\"The Essential\" - White Cotton Shirt & Pant Co-ord Set", "gross_sales": 8096, "net_sales": 8096, "orders": 4, "units_sold": 4, "ending_inventory": 5893},
+      {"product": "Everyday Elegance Cotton Kurta Pant Set", "gross_sales": 7996, "net_sales": 7896.05, "orders": 4, "units_sold": 4, "ending_inventory": 63218},
+      {"product": "\"Sana\" — Deep Chocolate Premium Georgette Anarkali Set", "gross_sales": 5098, "net_sales": 4968.05, "orders": 2, "units_sold": 2, "ending_inventory": 3144},
+      {"product": "Noor Blush Pink Cotton Lined Kurta & Flared Palazzo Set with Kota Doria Dupatta", "gross_sales": 3499, "net_sales": 3499, "orders": 1, "units_sold": null, "ending_inventory": null}
+    ],
+    "top_products_7d": [
+      {"product": "Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants", "gross_sales": 347361, "net_sales": 346361.4, "orders": 134},
+      {"product": "\"The Essential\" - White Cotton Shirt & Pant Co-ord Set", "gross_sales": 104049, "net_sales": 103644.2, "orders": 49},
+      {"product": "The Dhurandhar Black Short Kurta Set | A Dhirai Essential", "gross_sales": 72366, "net_sales": 71841.25, "orders": 33},
+      {"product": "Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women", "gross_sales": 44984, "net_sales": 43959.57, "orders": 15},
+      {"product": "Everyday Elegance Cotton Kurta Pant Set", "gross_sales": 31984, "net_sales": 31984, "orders": 16},
+      {"product": "Sage Aura cotton Kurta Set | DHIRAI", "gross_sales": 27687, "net_sales": 27023.72, "orders": 13},
+      {"product": "Eclipse Grace Premium Crepe Salwar Suit set | DHIRAI", "gross_sales": 27191, "net_sales": 20045.31, "orders": 9},
+      {"product": "\"Inayat\" — Power Pastel Cotton Shirt & Trouser Co-ord Set", "gross_sales": 23988, "net_sales": 23988, "orders": 11},
+      {"product": "Zehra Co-ord set| DHIRAI", "gross_sales": 22591, "net_sales": 22591, "orders": 9},
+      {"product": "Black Cotton Kurta Pant Set", "gross_sales": 19990, "net_sales": 19990, "orders": 10}
+    ],
+    "unavailable": [
+      "Failed payments: not exposed by the connected Shopify MCP tools — no field/tool available to isolate failed payment attempts.",
+      "Abandoned checkouts: no dedicated tool available via the connected Shopify MCP server; Shopify Admin UI (Analytics > Checkout behaviour) required to pull this.",
+      "Cancellations: a targeted order search for cancelled/refunded/voided orders on 2026-06-30 returned zero matches; cannot fully rule out gaps in the connected server's query syntax support.",
+      "Session-based conversion rate is showing ~0% for all 8 days despite real completed orders (57 orders on 2026-06-30 alone) - this looks like a Shopify Analytics attribution/session-matching lag, not zero conversions. Flagged for review rather than trusted at face value."
+    ]
+  },
+  "meta": {
+    "ad_account_id": "979830497515712",
+    "ad_account_name": "Dhirai",
+    "daily_history": [
+      {"date": "2026-06-23", "spend": 38854.91, "impressions": 265421, "reach": 214426, "clicks": 5437, "ctr": 2.05, "cpc": 7.15, "cpm": 146.39, "purchases": 60, "roas": 3.93},
+      {"date": "2026-06-24", "spend": 39597.99, "impressions": 261473, "reach": 200752, "clicks": 5783, "ctr": 2.21, "cpc": 6.85, "cpm": 151.44, "purchases": 51, "roas": 3.25},
+      {"date": "2026-06-25", "spend": 38946.55, "impressions": 162777, "reach": 124083, "clicks": 4357, "ctr": 2.68, "cpc": 8.94, "cpm": 239.26, "purchases": 47, "roas": 3.12},
+      {"date": "2026-06-26", "spend": 42277.97, "impressions": 243521, "reach": 195484, "clicks": 5114, "ctr": 2.10, "cpc": 8.27, "cpm": 173.61, "purchases": 60, "roas": 3.45},
+      {"date": "2026-06-27", "spend": 32409.25, "impressions": 192229, "reach": 148787, "clicks": 4153, "ctr": 2.16, "cpc": 7.80, "cpm": 168.60, "purchases": 56, "roas": 4.42},
+      {"date": "2026-06-28", "spend": 43450.69, "impressions": 327124, "reach": 255502, "clicks": 5714, "ctr": 1.75, "cpc": 7.60, "cpm": 132.83, "purchases": 55, "roas": 3.22},
+      {"date": "2026-06-29", "spend": 39138.71, "impressions": 300516, "reach": 252389, "clicks": 4951, "ctr": 1.65, "cpc": 7.91, "cpm": 130.24, "purchases": 48, "roas": 3.13},
+      {"date": "2026-06-30", "spend": 40644.96, "impressions": 250223, "reach": 201632, "clicks": 4738, "ctr": 1.89, "cpc": 8.58, "cpm": 162.43, "purchases": 57, "roas": 4.13}
+    ],
+    "campaigns_yesterday": [
+      {"name": "New Campaign- for recovery", "status": "ACTIVE", "spend": 12200.15, "impressions": 157390, "reach": 139095, "clicks": 1599, "ctr": 1.02, "cpc": 7.63, "purchases": 23, "cpa": 530.44, "roas": 4.75},
+      {"name": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 13867.33, "impressions": 40826, "reach": 33800, "clicks": 1422, "ctr": 3.48, "cpc": 9.75, "purchases": 15, "cpa": 924.49, "roas": 4.73},
+      {"name": "Black DHURANDHAR", "status": "ACTIVE", "spend": 8209.95, "impressions": 34702, "reach": 29701, "clicks": 1129, "ctr": 3.25, "cpc": 7.27, "purchases": 13, "cpa": 631.53, "roas": 3.46},
+      {"name": "Retargeting- new", "status": "ACTIVE", "spend": 6367.53, "impressions": 17305, "reach": 11805, "clicks": 588, "ctr": 3.40, "cpc": 10.83, "purchases": 6, "cpa": 1061.26, "roas": 2.51}
+    ],
+    "campaigns_7d": [
+      {"name": "Dhirai Scale -ASC", "spend": 96445.04, "impressions": 394977, "clicks": 12900, "ctr": 3.27, "cpc": 7.48, "purchases": 114, "cpa": 846.01, "roas": 3.00},
+      {"name": "New Campaign- for recovery", "spend": 78625.02, "impressions": 986010, "clicks": 11151, "ctr": 1.13, "cpc": 7.05, "purchases": 120, "cpa": 655.21, "roas": 3.91},
+      {"name": "Black DHURANDHAR", "spend": 56782.12, "impressions": 253326, "clicks": 7449, "ctr": 2.94, "cpc": 7.62, "purchases": 64, "cpa": 887.22, "roas": 2.58},
+      {"name": "Retargeting- new", "spend": 42823.89, "impressions": 118748, "clicks": 4009, "ctr": 3.38, "cpc": 10.68, "purchases": 79, "cpa": 542.07, "roas": 4.92}
+    ],
+    "adsets_yesterday": [
+      {"name": "New Sales Ad Set", "campaign": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 12610.00, "impressions": 37296, "clicks": 1308, "ctr": 3.51, "cpc": 9.64, "purchases": 14, "cpa": 900.71, "roas": 3.56},
+      {"name": "Rayon", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 12025.93, "impressions": 156993, "clicks": 1586, "ctr": 1.01, "cpc": 7.58, "purchases": 23, "cpa": 522.87, "roas": 4.82},
+      {"name": "Broad", "campaign": "Black DHURANDHAR", "status": "ACTIVE", "spend": 8209.95, "impressions": 34702, "clicks": 1129, "ctr": 3.25, "cpc": 7.27, "purchases": 13, "cpa": 631.53, "roas": 3.46},
+      {"name": "Best performing ads", "campaign": "Retargeting- new", "status": "ACTIVE", "spend": 5698.85, "impressions": 15145, "clicks": 550, "ctr": 3.63, "cpc": 10.36, "purchases": 6, "cpa": 949.81, "roas": 2.81},
+      {"name": "Karigari", "campaign": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 1257.33, "impressions": 3530, "clicks": 114, "ctr": 3.23, "cpc": 11.03, "purchases": 1, "cpa": 1257.33, "roas": 16.39},
+      {"name": "Black and multiple", "campaign": "Retargeting- new", "status": "ACTIVE", "spend": 668.68, "impressions": 2160, "clicks": 38, "ctr": 1.76, "cpc": 17.60, "purchases": 0, "cpa": null, "roas": null, "warning": "Narrow audience (13.7K-16.2K) flagged by Meta anomaly signal - may be limiting delivery."},
+      {"name": "Karigar", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 110.00, "impressions": 212, "clicks": 10, "ctr": 4.72, "cpc": 11.00, "purchases": 0, "cpa": null, "roas": null},
+      {"name": "White Dhurandhar", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 37.18, "impressions": 118, "clicks": 0, "ctr": null, "cpc": null, "purchases": 0, "cpa": null, "roas": null},
+      {"name": "Black Dhurandhar", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 27.04, "impressions": 67, "clicks": 3, "ctr": 4.48, "cpc": 9.01, "purchases": 0, "cpa": null, "roas": null}
+    ],
+    "anomalies": [
+      "Ad set 'Black and multiple' (Retargeting- new campaign) is actively delivering to a narrow estimated audience (13,700-16,200) - Meta flags this as limiting reach/delivery efficiency."
+    ],
+    "unavailable": [
+      "Ad-level (individual creative) breakdown was not pulled today to keep the report concise - campaign and ad set level fully cover best/worst performance."
+    ]
+  }
+}
