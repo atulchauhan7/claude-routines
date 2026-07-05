@@ -1,0 +1,102 @@
+{
+  "date": "2026-07-04",
+  "low_inventory_threshold": 50,
+  "shopify_history": [
+    {"date":"2026-06-27","gross_sales":163386,"net_sales":135020.7,"orders":62,"aov":2627.64,"discounts":472.3,"returns":27893,"cancellations":"","sessions":"","conversion_rate":""},
+    {"date":"2026-06-28","gross_sales":143639,"net_sales":143174.25,"orders":56,"aov":2556.683,"discounts":464.75,"returns":0,"cancellations":"","sessions":"","conversion_rate":""},
+    {"date":"2026-06-29","gross_sales":120251,"net_sales":112962.15,"orders":47,"aov":2550.237,"discounts":389.85,"returns":6899,"cancellations":"","sessions":"","conversion_rate":""},
+    {"date":"2026-06-30","gross_sales":170229,"net_sales":167376.63,"orders":57,"aov":2936.432,"discounts":2852.37,"returns":0,"cancellations":"","sessions":"","conversion_rate":""},
+    {"date":"2026-07-01","gross_sales":179124,"net_sales":177005.18,"orders":72,"aov":2458.405,"discounts":2118.82,"returns":0,"cancellations":"","sessions":"","conversion_rate":""},
+    {"date":"2026-07-02","gross_sales":173525,"net_sales":170132.31,"orders":69,"aov":2465.685,"discounts":3392.69,"returns":0,"cancellations":"","sessions":"","conversion_rate":""},
+    {"date":"2026-07-03","gross_sales":164030,"net_sales":161868.78,"orders":65,"aov":2490.288,"discounts":2161.22,"returns":0,"cancellations":"","sessions":"","conversion_rate":""}
+  ],
+  "shopify_today": {
+    "date":"2026-07-04","gross_sales":125346,"net_sales":124686.3,"orders":52,"aov":2397.81,
+    "discounts":659.7,"returns":0,"cancellations":0,"sessions":3161,"conversion_rate":0.0,
+    "gross_chg_pct":-21.25,"net_chg_pct":-18.24,"orders_chg_pct":-14.95,"aov_chg_pct":-7.19
+  },
+  "shopify_7d_avg": {"gross_sales":159169.14,"net_sales":152505.71,"orders":61.14,"aov":2583.62},
+  "meta_history": [
+    {"date":"2026-06-27","spend":32409.25,"impressions":192229,"reach":148787,"clicks":4153,"ctr":2.16,"cpc":7.80,"cpm":168.60,"purchases":"","cpa":"","roas":4.42},
+    {"date":"2026-06-28","spend":43450.69,"impressions":327124,"reach":255502,"clicks":5714,"ctr":1.75,"cpc":7.60,"cpm":132.83,"purchases":"","cpa":"","roas":3.22},
+    {"date":"2026-06-29","spend":39138.71,"impressions":300516,"reach":252389,"clicks":4951,"ctr":1.65,"cpc":7.91,"cpm":130.24,"purchases":"","cpa":"","roas":3.13},
+    {"date":"2026-06-30","spend":40645.60,"impressions":250234,"reach":201632,"clicks":4738,"ctr":1.89,"cpc":8.58,"cpm":162.43,"purchases":"","cpa":"","roas":4.13},
+    {"date":"2026-07-01","spend":40103.79,"impressions":294667,"reach":247001,"clicks":5339,"ctr":1.81,"cpc":7.51,"cpm":136.10,"purchases":"","cpa":"","roas":4.29},
+    {"date":"2026-07-02","spend":41809.32,"impressions":286238,"reach":241167,"clicks":5335,"ctr":1.86,"cpc":7.84,"cpm":146.06,"purchases":"","cpa":"","roas":4.15},
+    {"date":"2026-07-03","spend":41497.96,"impressions":286555,"reach":234669,"clicks":5313,"ctr":1.85,"cpc":7.81,"cpm":144.82,"purchases":"","cpa":"","roas":3.60}
+  ],
+  "meta_today": {
+    "date":"2026-07-04","spend":34866.33,"impressions":208293,"reach":171824,"clicks":4497,"ctr":2.16,"cpc":7.75,"cpm":167.39,
+    "purchases":48,"cpa":726.38,"roas":3.23,
+    "spend_chg_pct":-12.54,"impr_chg_pct":-24.75,"clicks_chg_pct":-11.43,"ctr_chg_pct":16.57,"roas_chg_pct":-16.07
+  },
+  "meta_7d_avg": {"spend":39865.05,"impressions":276794.71,"clicks":5077.57,"ctr":1.8529,"roas":3.8486},
+  "top_products": [
+    {"product":"Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants","gross_sales":27489,"orders":10,"units_sold":11},
+    {"product":"\"The Essential\" - White Cotton Shirt & Pant Co-ord Set","gross_sales":22289,"orders":10,"units_sold":11},
+    {"product":"Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women","gross_sales":14095,"orders":5,"units_sold":5},
+    {"product":"\"Maira\" — Premium Pure Cotton Minimalist Co-ord Set","gross_sales":8097,"orders":3,"units_sold":3},
+    {"product":"The Dhurandhar Black Short Kurta Set | A Dhirai Essential","gross_sales":6697,"orders":3,"units_sold":3},
+    {"product":"The Zoya Relaxed Set","gross_sales":4998,"orders":2,"units_sold":2},
+    {"product":"Black Cotton Kurta Pant Set","gross_sales":4198,"orders":2,"units_sold":2},
+    {"product":"VAIRA Airy Linen Everyday Co-ord Set | Women's Shirt and Pant","gross_sales":3998,"orders":2,"units_sold":2},
+    {"product":"Sukoon Luxe Suit Set","gross_sales":2999,"orders":1,"units_sold":""},
+    {"product":"Eclipse Grace Premium Crepe Salwar Suit set | DHIRAI","gross_sales":2999,"orders":1,"units_sold":""}
+  ],
+  "inventory": [
+    {"product":"\"The Essential\" - White Cotton Shirt & Pant Co-ord Set","ending_inventory":5829,"units_sold":11,"sell_through_rate":0.0019},
+    {"product":"Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants","ending_inventory":17082,"units_sold":11,"sell_through_rate":0.0006},
+    {"product":"Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women","ending_inventory":14625,"units_sold":5,"sell_through_rate":0.0003},
+    {"product":"The Dhurandhar Black Short Kurta Set | A Dhirai Essential","ending_inventory":2134,"units_sold":3,"sell_through_rate":0.0014},
+    {"product":"\"Maira\" — Premium Pure Cotton Minimalist Co-ord Set","ending_inventory":12712,"units_sold":3,"sell_through_rate":0.0002},
+    {"product":"VAIRA Airy Linen Everyday Co-ord Set | Women's Shirt and Pant","ending_inventory":23966,"units_sold":2,"sell_through_rate":0.0001},
+    {"product":"Black Cotton Kurta Pant Set","ending_inventory":14200,"units_sold":2,"sell_through_rate":0.0001},
+    {"product":"The Zoya Relaxed Set","ending_inventory":3807,"units_sold":2,"sell_through_rate":0.0005},
+    {"product":"Sage Aura cotton Kurta Set | DHIRAI","ending_inventory":372,"units_sold":1,"sell_through_rate":0.0027}
+  ],
+  "campaigns": [
+    {"name":"New Campaign- for recovery","status":"ACTIVE","spend":11887.33,"impressions":105237,"clicks":1268,"ctr":1.20,"cpc":9.37,"purchases":13,"cpa":914.41,"roas":2.83},
+    {"name":"Dhirai Scale -ASC","status":"ACTIVE","spend":8662.29,"impressions":49659,"clicks":1180,"ctr":2.38,"cpc":7.34,"purchases":8,"cpa":1082.79,"roas":2.16},
+    {"name":"Retargeting- new","status":"ACTIVE","spend":7902.44,"impressions":18581,"clicks":777,"ctr":4.18,"cpc":10.17,"purchases":21,"cpa":376.31,"roas":5.80},
+    {"name":"Black DHURANDHAR","status":"ACTIVE","spend":6414.27,"impressions":34816,"clicks":1272,"ctr":3.65,"cpc":5.04,"purchases":6,"cpa":1069.05,"roas":2.28}
+  ],
+  "adsets": [
+    {"name":"Rayon","campaign":"New Campaign- for recovery","spend":10956.36,"impressions":102590,"clicks":1167,"ctr":1.14,"cpc":9.39,"purchases":9,"cpa":1217.37,"roas":2.04,"delivery_status":"active","delivery_note":""},
+    {"name":"New Sales Ad Set","campaign":"Dhirai Scale -ASC","spend":7951.35,"impressions":47433,"clicks":1096,"ctr":2.31,"cpc":7.25,"purchases":7,"cpa":1135.91,"roas":2.00,"delivery_status":"active","delivery_note":""},
+    {"name":"Broad","campaign":"Black DHURANDHAR","spend":6414.27,"impressions":34816,"clicks":1272,"ctr":3.65,"cpc":5.04,"purchases":6,"cpa":1069.05,"roas":2.28,"delivery_status":"active","delivery_note":""},
+    {"name":"Best performing ads","campaign":"Retargeting- new","spend":5827.40,"impressions":14112,"clicks":583,"ctr":4.13,"cpc":10.00,"purchases":18,"cpa":323.74,"roas":6.75,"delivery_status":"active","delivery_note":""},
+    {"name":"Black and multiple","campaign":"Retargeting- new","spend":2075.04,"impressions":4469,"clicks":194,"ctr":4.34,"cpc":10.70,"purchases":3,"cpa":691.68,"roas":3.13,"delivery_status":"active","delivery_note":"narrow audience (13,900-16,400 est. size) per Meta anomaly signal"},
+    {"name":"Karigari","campaign":"Dhirai Scale -ASC","spend":710.94,"impressions":2226,"clicks":84,"ctr":3.77,"cpc":8.46,"purchases":1,"cpa":710.94,"roas":3.94,"delivery_status":"active","delivery_note":""},
+    {"name":"Karigar","campaign":"New Campaign- for recovery","spend":706.95,"impressions":2029,"clicks":87,"ctr":4.29,"cpc":8.13,"purchases":4,"cpa":176.74,"roas":15.98,"delivery_status":"warning","delivery_note":"learning_exit_unsuccessfully"},
+    {"name":"White Dhurandhar","campaign":"New Campaign- for recovery","spend":116.15,"impressions":404,"clicks":8,"ctr":1.98,"cpc":14.52,"purchases":0,"cpa":0,"roas":null,"delivery_status":"warning","delivery_note":"learning_exit_unsuccessfully"},
+    {"name":"Black Dhurandhar","campaign":"New Campaign- for recovery","spend":107.87,"impressions":214,"clicks":6,"ctr":2.80,"cpc":17.98,"purchases":0,"cpa":0,"roas":null,"delivery_status":"warning","delivery_note":"learning_exit_unsuccessfully"}
+  ],
+  "executive_summary": "Yesterday (4 Jul 2026), Dhirai did ₹125,346 gross sales on 52 orders — down 21.3% and 15.0% vs the trailing 7-day average, respectively. Meta Ads spent ₹34,866 at a 3.23x blended ROAS (down 16.1% vs 7-day avg of 3.85x), though CTR improved to 2.16% and CPC held steady. The 'Retargeting- new' campaign (5.80x ROAS) and its 'Best performing ads' set (6.75x ROAS, 18 purchases) are the standout performers and candidates to scale; 'Dhirai Scale -ASC' is the weakest active campaign (2.16x ROAS) and merits review.",
+  "key_wins": [
+    "'Retargeting- new' campaign delivering 5.80x ROAS (best of active campaigns) — the 'Best performing ads' ad set within it hit 6.75x ROAS on 18 purchases.",
+    "'Karigar' ad set hit an exceptional 15.98x ROAS on ₹707 spend — small sample but worth a cautious budget increase to test scalability.",
+    "CTR rose to 2.16% (+16.6% vs 7-day avg of 1.85%) with CPC flat — traffic quality improved even as volume pulled back."
+  ],
+  "key_issues": [
+    "Gross sales down 21.3% (₹125,346 vs ₹159,169 avg) and orders down 15.0% (52 vs 61.1 avg) vs the 7-day average — steepest single-day drop in the trailing window.",
+    "Blended ROAS down 16.1% vs 7-day avg (3.23x vs 3.85x) alongside a 24.8% drop in impressions — reduced delivery/reach likely contributed to the softer sales day.",
+    "'Dhirai Scale -ASC' campaign (₹8,662 spend) is the weakest active campaign at 2.16x ROAS, dragging down the blended average.",
+    "'Black and multiple' ad set flagged by Meta for a narrow audience (~14-16K estimated size), which can limit delivery and raise costs.",
+    "Shopify checkout-funnel analytics (sessions reaching/completing checkout) returned 0 for 4 Jul despite 52 completed orders — looks like a same-day reporting lag, not a real funnel problem, but worth confirming."
+  ],
+  "recommendations": [
+    {"type":"🚨 Investigate", "text":"Investigate the 21.3% drop in gross sales and 15.0% drop in orders vs the 7-day average — check site uptime, payment gateway health, and traffic-source mix for 4 Jul before assuming it's a one-off."},
+    {"type":"✅ Scale", "text":"Scale the 'Retargeting- new' campaign, especially the 'Best performing ads' ad set (6.75x ROAS, 18 purchases) — increase daily budget by 20-30%."},
+    {"type":"🧪 Test", "text":"Cautiously increase budget on the 'Karigar' ad set (15.98x ROAS) to confirm performance holds at higher spend before committing further."},
+    {"type":"⚠️ Review", "text":"Review 'Dhirai Scale -ASC' campaign (2.16x ROAS, ₹8,662 spend) — refresh creative or tighten targeting since it's the weakest active spender."},
+    {"type":"⚠️ Review", "text":"Expand the audience for the 'Black and multiple' ad set (flagged narrow by Meta) or test an Advantage+ audience to reduce delivery friction."},
+    {"type":"🔍 Check", "text":"Verify Shopify checkout/session tracking for 4 Jul — reached/completed-checkout metrics read zero despite 52 completed orders, which points to a reporting lag rather than an actual funnel break."},
+    {"type":"📦 Monitor", "text":"No refunds or cancellations recorded yesterday and no critically low stock among top sellers (lowest ending inventory: 372 units) — continue routine monitoring, especially given ₹27,893 in returns on 27 Jun."}
+  ],
+  "unavailable_notes": [
+    "Failed payments: not exposed by the connected Shopify tools available in this session (no direct ShopifyQL/Admin API field surfaced) — left blank. Recommend checking Shopify Admin > Settings > Payments for declined-transaction detail.",
+    "Abandoned checkouts: Shopify session analytics returned 0 for both 'reached checkout' and 'completed checkout' on 4 Jul, which conflicts with the 52 orders completed that day. This looks like a same-day attribution/reporting lag in Shopify's analytics rather than a real number, so it was left blank instead of showing a misleading zero. Re-check on the next run once the data settles.",
+    "Cancellations for the historical dates 27 Jun - 3 Jul were not individually re-verified — only yesterday (4 Jul) was checked directly and confirmed at 0 cancelled/voided orders.",
+    "Google Sheets was not available in this session (no Google Sheets/Drive connector connected). Delivered as this formatted Excel workbook, attached to the email and committed to the atulchauhan7/claude-routines git repository so future daily runs can append to the same historical file instead of overwriting it."
+  ]
+}
