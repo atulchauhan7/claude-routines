@@ -1,0 +1,96 @@
+{
+  "store": {
+    "name": "Dhirai",
+    "domain": "dhirai.in",
+    "currency": "INR",
+    "timezone": "Asia/Kolkata"
+  },
+  "ad_account": {
+    "id": "979830497515712",
+    "name": "Dhirai",
+    "currency": "INR"
+  },
+  "shopify_daily": {
+    "2026-06-30": {"gross_sales": 167376.63, "net_sales": 167376.63, "orders": 57, "aov": 2936.43, "discounts": 2852.37, "refunds": 0.0, "cancellations": 0, "pending_payment": 41, "units_sold": 71},
+    "2026-07-01": {"gross_sales": 177005.18, "net_sales": 177005.18, "orders": 72, "aov": 2458.41, "discounts": 2118.82, "refunds": 0.0, "cancellations": 0, "pending_payment": 52, "units_sold": 76},
+    "2026-07-02": {"gross_sales": 170132.31, "net_sales": 170132.31, "orders": 69, "aov": 2465.69, "discounts": 3392.69, "refunds": 0.0, "cancellations": 0, "pending_payment": 58, "units_sold": 75},
+    "2026-07-03": {"gross_sales": 161868.78, "net_sales": 161868.78, "orders": 65, "aov": 2490.29, "discounts": 2161.22, "refunds": 0.0, "cancellations": 0, "pending_payment": 54, "units_sold": 70},
+    "2026-07-04": {"gross_sales": 124686.30, "net_sales": 124686.30, "orders": 52, "aov": 2397.81, "discounts": 659.70, "refunds": 0.0, "cancellations": 0, "pending_payment": 45, "units_sold": 54},
+    "2026-07-05": {"gross_sales": 159959.97, "net_sales": 159959.97, "orders": 66, "aov": 2423.64, "discounts": 5866.03, "refunds": 0.0, "cancellations": 0, "pending_payment": 55, "units_sold": 74},
+    "2026-07-06": {"gross_sales": 160356.98, "net_sales": 160356.98, "orders": 66, "aov": 2429.65, "discounts": 2123.02, "refunds": 0.0, "cancellations": 0, "pending_payment": 61, "units_sold": 70},
+    "2026-07-07": {"gross_sales": 154855.15, "net_sales": 154855.15, "orders": 65, "aov": 2419.61, "discounts": 329.85, "refunds": 0.0, "cancellations": 1, "pending_payment": 62, "units_sold": 65}
+  },
+  "meta_daily": {
+    "2026-06-30": {"spend": 40645.60, "impressions": 250234, "reach": 201632, "clicks": 4738, "ctr": 1.89, "cpc": 8.58, "cpm": 162.43, "purchases": null, "cpa": null, "roas": 4.13},
+    "2026-07-01": {"spend": 40103.79, "impressions": 294667, "reach": 247001, "clicks": 5339, "ctr": 1.81, "cpc": 7.51, "cpm": 136.10, "purchases": null, "cpa": null, "roas": 4.29},
+    "2026-07-02": {"spend": 41809.32, "impressions": 286238, "reach": 241167, "clicks": 5335, "ctr": 1.86, "cpc": 7.84, "cpm": 146.06, "purchases": null, "cpa": null, "roas": 4.15},
+    "2026-07-03": {"spend": 41497.96, "impressions": 286555, "reach": 234669, "clicks": 5313, "ctr": 1.85, "cpc": 7.81, "cpm": 144.82, "purchases": null, "cpa": null, "roas": 3.60},
+    "2026-07-04": {"spend": 34869.21, "impressions": 208302, "reach": 171824, "clicks": 4498, "ctr": 2.16, "cpc": 7.75, "cpm": 167.40, "purchases": null, "cpa": null, "roas": 3.23},
+    "2026-07-05": {"spend": 43115.88, "impressions": 259257, "reach": 210046, "clicks": 5727, "ctr": 2.21, "cpc": 7.53, "cpm": 166.31, "purchases": null, "cpa": null, "roas": 3.54},
+    "2026-07-06": {"spend": 41465.01, "impressions": 244063, "reach": 204927, "clicks": 5323, "ctr": 2.18, "cpc": 7.79, "cpm": 169.89, "purchases": null, "cpa": null, "roas": 3.63},
+    "2026-07-07": {"spend": 43724.26, "impressions": 289687, "reach": 249037, "clicks": 6152, "ctr": 2.12, "cpc": 7.11, "cpm": 150.94, "purchases": 63, "cpa": 693.72, "roas": 3.37}
+  },
+  "products": {
+    "2026-07-07": [
+      {"title": "Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants", "units": 21, "revenue": 52479.0},
+      {"title": "\"The Essential\" - White Cotton Shirt & Pant Co-ord Set", "units": 12, "revenue": 24388.0},
+      {"title": "Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women", "units": 4, "revenue": 11396.0},
+      {"title": "Noor Sand Kurta Set", "units": 2, "revenue": 6998.0},
+      {"title": "Eclipse Grace Premium Crepe Salwar Suit set", "units": 2, "revenue": 5998.0},
+      {"title": "\"Inayat\" — Power Pastel Cotton Shirt & Trouser Co-ord Set", "units": 3, "revenue": 5997.0},
+      {"title": "\"Riva\" — Premium Flowy Rayon Co-ord Set", "units": 2, "revenue": 3998.0},
+      {"title": "Honey Grace Embroidery Co-Ord Set", "units": 1, "revenue": 3499.0},
+      {"title": "Moonstone Grace Kurta Set", "units": 1, "revenue": 2999.0},
+      {"title": "\"Adira\" - Premium Breathable Soft Fabric Salwar Set", "units": 1, "revenue": 2999.0}
+    ]
+  },
+  "campaigns": {
+    "2026-07-07": [
+      {"name": "New Campaign- for recovery", "status": "ACTIVE", "spend": 14745.00, "impressions": 146832, "reach": 130524, "clicks": 1839, "ctr": 1.25, "cpc": 8.02, "cpm": 100.42, "purchases": 20, "cpa": 737.25, "roas": 3.38},
+      {"name": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 12719.42, "impressions": 72570, "reach": 63536, "clicks": 1725, "ctr": 2.38, "cpc": 7.37, "cpm": 175.27, "purchases": 16, "cpa": 794.96, "roas": 2.68},
+      {"name": "Black DHURANDHAR", "status": "ACTIVE", "spend": 8562.38, "impressions": 48463, "reach": 41522, "clicks": 1693, "ctr": 3.49, "cpc": 5.06, "cpm": 176.68, "purchases": 14, "cpa": 611.60, "roas": 3.99},
+      {"name": "Retargeting- new", "status": "ACTIVE", "spend": 7697.46, "impressions": 21822, "reach": 13455, "clicks": 895, "ctr": 4.10, "cpc": 8.60, "cpm": 352.74, "purchases": 13, "cpa": 592.11, "roas": 3.79}
+    ]
+  },
+  "adsets": {
+    "2026-07-07": [
+      {"name": "Rayon", "status": "ACTIVE", "spend": 12647.19, "impressions": 140580, "reach": 124582, "clicks": 1632, "ctr": 1.16, "cpc": 7.75, "cpm": 89.96, "purchases": 19, "cpa": 665.64, "roas": 3.70},
+      {"name": "New Sales Ad Set", "status": "ACTIVE", "spend": 11908.47, "impressions": null, "reach": null, "clicks": null, "ctr": 2.34, "cpc": null, "cpm": null, "purchases": 15, "cpa": null, "roas": 2.63},
+      {"name": "Broad", "status": "ACTIVE", "spend": 8562.38, "impressions": 48463, "reach": 41522, "clicks": 1693, "ctr": 3.49, "cpc": 5.06, "cpm": 176.68, "purchases": 14, "cpa": 611.60, "roas": 3.99},
+      {"name": "Best performing ads", "status": "ACTIVE", "spend": 5873.11, "impressions": null, "reach": null, "clicks": null, "ctr": 3.99, "cpc": null, "cpm": null, "purchases": 12, "cpa": null, "roas": 4.63},
+      {"name": "Black and multiple", "status": "ACTIVE", "spend": 1824.35, "impressions": null, "reach": null, "clicks": null, "ctr": 4.56, "cpc": null, "cpm": null, "purchases": 1, "cpa": null, "roas": 1.10},
+      {"name": "Karigar", "status": "ACTIVE", "spend": 1705.00, "impressions": 5100, "reach": 4550, "clicks": 182, "ctr": 3.57, "cpc": 9.37, "cpm": 334.31, "purchases": 1, "cpa": 1705.00, "roas": 1.76},
+      {"name": "Karigari", "status": "ACTIVE", "spend": 810.95, "impressions": null, "reach": null, "clicks": null, "ctr": 3.77, "cpc": null, "cpm": null, "purchases": 1, "cpa": null, "roas": 3.45},
+      {"name": "White Dhurandhar", "status": "ACTIVE", "spend": 282.04, "impressions": 906, "reach": 809, "clicks": 20, "ctr": 2.21, "cpc": 14.10, "cpm": 311.30, "purchases": 0, "cpa": null, "roas": null},
+      {"name": "Black Dhurandhar", "status": "ACTIVE", "spend": 110.77, "impressions": 246, "reach": 220, "clicks": 5, "ctr": 2.03, "cpc": 22.15, "cpm": 450.28, "purchases": 0, "cpa": null, "roas": null}
+    ]
+  },
+  "inventory_issues": {
+    "2026-07-07": [
+      {"title": "\"Utsav\" - Mal Cotton Full Flare Anarkali Suit Set with Silver Gota", "status": "ACTIVE", "total_inventory": 0, "issue": "Active/listed with 0 units in stock across all variants"}
+    ]
+  },
+  "anomalies": {
+    "2026-07-07": [
+      "Ad set 'Black and multiple' (ID 120238324193200464): narrow audience warning (est. reach 20,100–23,700) — also has the weakest ROAS (1.10x) among active ad sets"
+    ]
+  },
+  "opportunity_score": {
+    "2026-07-07": {
+      "score": 80,
+      "recommendations": [
+        "Consolidate 4 ad sets with similar setups/audiences (Rayon, Black Dhurandhar, White Dhurandhar, Karigar) — fragmentation is slowing learning-phase exit and could unlock +7 pts / more sales",
+        "Consider 'Maximise number of conversions' bidding goal on new campaigns — est. 17% lower cost per result (+1 pt)"
+      ]
+    }
+  },
+  "unavailable_metrics": {
+    "2026-07-07": [
+      "Shopify: ShopifyQL Analytics API returned no data for this store (permissions/plan limitation) — all Shopify figures were computed directly from raw order data via the Admin GraphQL API instead.",
+      "Shopify: Sessions, cart-adds, checkout funnel, and abandoned-checkout counts are not available (requires read access to Shopify's online store analytics, which this app does not have) — left blank.",
+      "Shopify: 'Pending Payment' includes PENDING/VOIDED/EXPIRED financial statuses combined — for this store the vast majority are Cash-on-Delivery orders awaiting collection, not necessarily failed payments. A true failed-payment-only breakdown was not separately queried.",
+      "Shopify: Refunds shown reflect same-day refund totals only; returns processed on later days are not retroactively attributed back to the order date.",
+      "Meta Ads: purchases/CPA for the 7-day comparison window (Jun 30–Jul 6) at account level returned 'Not available' from Meta (results were split across multiple attribution settings) — only spend/impressions/reach/clicks/CTR/CPC/CPM/ROAS could be averaged; purchases 7-day avg is left blank."
+    ]
+  }
+}
