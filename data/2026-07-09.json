@@ -1,0 +1,78 @@
+{
+  "date": "2026-07-09",
+  "shopify_history": [
+    {"date":"2026-07-02","gross_sales":173525,"net_sales":170132.31,"orders":69,"aov":2465.685,"discounts":-3392.69,"returns":0,"shipping":0,"taxes":0,"total_sales":170132.31,"sessions":3696,"cart_adds":237,"reached_checkout":1,"completed_checkout":0,"conversion_rate":0.0},
+    {"date":"2026-07-03","gross_sales":164030,"net_sales":161868.78,"orders":65,"aov":2490.288,"discounts":-2161.22,"returns":0,"shipping":0,"taxes":0,"total_sales":161868.78,"sessions":3749,"cart_adds":207,"reached_checkout":0,"completed_checkout":0,"conversion_rate":0.0},
+    {"date":"2026-07-04","gross_sales":125346,"net_sales":124686.3,"orders":52,"aov":2397.813,"discounts":-659.7,"returns":0,"shipping":0,"taxes":0,"total_sales":124686.3,"sessions":3161,"cart_adds":178,"reached_checkout":0,"completed_checkout":0,"conversion_rate":0.0},
+    {"date":"2026-07-05","gross_sales":165826,"net_sales":159959.97,"orders":66,"aov":2423.635,"discounts":-5866.03,"returns":0,"shipping":0,"taxes":0,"total_sales":159959.97,"sessions":4087,"cart_adds":229,"reached_checkout":2,"completed_checkout":0,"conversion_rate":0.0},
+    {"date":"2026-07-06","gross_sales":162175.07,"net_sales":160052.05,"orders":66,"aov":2425.031,"discounts":-2123.02,"returns":0,"shipping":0,"taxes":304.93,"total_sales":160356.98,"sessions":3833,"cart_adds":219,"reached_checkout":2,"completed_checkout":1,"conversion_rate":0.00026089225150013044},
+    {"date":"2026-07-07","gross_sales":157434,"net_sales":157104.15,"orders":65,"aov":2416.986,"discounts":-329.85,"returns":0,"shipping":0,"taxes":0,"total_sales":157104.15,"sessions":4127,"cart_adds":231,"reached_checkout":0,"completed_checkout":0,"conversion_rate":0.0},
+    {"date":"2026-07-08","gross_sales":132865.03,"net_sales":127317.38,"orders":57,"aov":2316.936,"discounts":-799.65,"returns":-4748,"shipping":0,"taxes":426.97,"total_sales":127744.35,"sessions":3760,"cart_adds":201,"reached_checkout":2,"completed_checkout":1,"conversion_rate":0.00026595744680851064},
+    {"date":"2026-07-09","gross_sales":190834.8,"net_sales":186473.48,"orders":73,"aov":2588.664,"discounts":-1862.32,"returns":-2499,"shipping":0,"taxes":381.2,"total_sales":186854.68,"sessions":4005,"cart_adds":230,"reached_checkout":1,"completed_checkout":1,"conversion_rate":0.00024968789013732833}
+  ],
+  "meta_history": [
+    {"date":"2026-07-02","spend":41809.32,"impressions":286238,"reach":241167,"clicks":5335,"ctr":1.86,"cpc":7.84,"cpm":146.06,"purchases":70,"cpa":597.28,"roas":4.15},
+    {"date":"2026-07-03","spend":41497.96,"impressions":286555,"reach":234669,"clicks":5313,"ctr":1.85,"cpc":7.81,"cpm":144.82,"purchases":61,"cpa":680.29,"roas":3.60},
+    {"date":"2026-07-04","spend":34869.21,"impressions":208302,"reach":171824,"clicks":4498,"ctr":2.16,"cpc":7.75,"cpm":167.40,"purchases":48,"cpa":726.44,"roas":3.23},
+    {"date":"2026-07-05","spend":43115.88,"impressions":259257,"reach":210046,"clicks":5727,"ctr":2.21,"cpc":7.53,"cpm":166.31,"purchases":64,"cpa":673.69,"roas":3.54},
+    {"date":"2026-07-06","spend":41465.01,"impressions":244063,"reach":204927,"clicks":5323,"ctr":2.18,"cpc":7.79,"cpm":169.89,"purchases":62,"cpa":668.79,"roas":3.63},
+    {"date":"2026-07-07","spend":43731.55,"impressions":289695,"reach":229432,"clicks":6152,"ctr":2.12,"cpc":7.11,"cpm":150.96,"purchases":63,"cpa":694.15,"roas":3.37},
+    {"date":"2026-07-08","spend":42618.38,"impressions":262678,"reach":209931,"clicks":5665,"ctr":2.16,"cpc":7.52,"cpm":162.25,"purchases":56,"cpa":761.04,"roas":3.05},
+    {"date":"2026-07-09","spend":43290.61,"impressions":258058,"reach":213173,"clicks":6023,"ctr":2.33,"cpc":7.19,"cpm":167.77,"purchases":66,"cpa":655.92,"roas":3.88}
+  ],
+  "top_products_yesterday": [
+    {"product":"Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants","gross_sales":37103.8,"net_sales":34604.8,"orders":15,"total_sales":34986},
+    {"product":"\"The Essential\" - White Cotton Shirt & Pant Co-ord Set","gross_sales":32584,"net_sales":32584,"orders":15,"total_sales":32584},
+    {"product":"The Dhurandhar Black Short Kurta Set | A Dhirai Essential","gross_sales":15743,"net_sales":15743,"orders":7,"total_sales":15743},
+    {"product":"\"Inayat\" — Power Pastel Cotton Shirt & Trouser Co-ord Set","gross_sales":10095,"net_sales":10095,"orders":5,"total_sales":10095},
+    {"product":"Zehra Co-ord set| DHIRAI","gross_sales":9996,"net_sales":9996,"orders":2,"total_sales":9996},
+    {"product":"Elegant Pakistani-Style Mauve Kurta Set","gross_sales":9995,"net_sales":9995,"orders":3,"total_sales":9995},
+    {"product":"Eclipse Grace Premium Crepe Salwar Suit set | DHIRAI","gross_sales":8997,"net_sales":8997,"orders":3,"total_sales":8997},
+    {"product":"Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Co-Ord for Women","gross_sales":8397,"net_sales":8397,"orders":3,"total_sales":8397},
+    {"product":"Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women","gross_sales":8397,"net_sales":8397,"orders":3,"total_sales":8397},
+    {"product":"Kaali Noor Black Cotton Farshi Salwar Set for Women | Elegant Kurta Set | Dhirai","gross_sales":4398,"net_sales":4398,"orders":2,"total_sales":4398}
+  ],
+  "top_products_7day": [
+    {"product":"Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants","gross_sales":324870,"net_sales":322870.8,"orders":128},
+    {"product":"\"The Essential\" - White Cotton Shirt & Pant Co-ord Set","gross_sales":238177.07,"net_sales":234720.8,"orders":115},
+    {"product":"Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women","gross_sales":61751.03,"net_sales":61751.03,"orders":21},
+    {"product":"The Dhurandhar Black Short Kurta Set | A Dhirai Essential","gross_sales":46978,"net_sales":41302.63,"orders":21},
+    {"product":"\"Inayat\" — Power Pastel Cotton Shirt & Trouser Co-ord Set","gross_sales":35982,"net_sales":35982,"orders":17},
+    {"product":"Eclipse Grace Premium Crepe Salwar Suit set | DHIRAI","gross_sales":32989,"net_sales":32839.05,"orders":11},
+    {"product":"Elegant Pakistani-Style Mauve Kurta Set","gross_sales":19990,"net_sales":19890.05,"orders":9},
+    {"product":"Sage Aura cotton Kurta Set | DHIRAI","gross_sales":18991,"net_sales":18222.76,"orders":9},
+    {"product":"\"Maira\" — Premium Pure Cotton Minimalist Co-ord Set","gross_sales":18293,"net_sales":18293,"orders":7},
+    {"product":"Black Cotton Kurta Pant Set","gross_sales":18291,"net_sales":17559.36,"orders":9}
+  ],
+  "campaigns_yesterday": [
+    {"campaign":"New Campaign- for recovery","status":"ACTIVE","spend":14225.72,"impressions":112491,"reach":94384,"clicks":1541,"ctr":1.37,"cpc":9.23,"cpm":126.46,"purchases":13,"cpa":1094.29,"roas":2.21},
+    {"campaign":"Retargeting- new","status":"ACTIVE","spend":8801.01,"impressions":25282,"reach":16540,"clicks":1008,"ctr":3.99,"cpc":8.73,"cpm":348.11,"purchases":23,"cpa":382.65,"roas":6.76},
+    {"campaign":"Dhirai Scale -ASC","status":"ACTIVE","spend":12365.31,"impressions":67342,"reach":59638,"clicks":1606,"ctr":2.38,"cpc":7.70,"cpm":183.62,"purchases":14,"cpa":883.24,"roas":2.58},
+    {"campaign":"Black DHURANDHAR","status":"ACTIVE","spend":7898.57,"impressions":52943,"reach":42611,"clicks":1868,"ctr":3.53,"cpc":4.23,"cpm":149.19,"purchases":16,"cpa":493.66,"roas":5.69}
+  ],
+  "adsets_yesterday": [
+    {"adset":"Rayon","campaign":"New Campaign- for recovery","spend":13125.39,"impressions":110266,"reach":93118,"clicks":1480,"ctr":1.34,"cpc":8.87,"cpm":119.03,"purchases":10,"cpa":1312.54,"roas":1.90},
+    {"adset":"Karigar","campaign":"New Campaign- for recovery","spend":287.28,"impressions":592,"reach":535,"clicks":19,"ctr":3.21,"cpc":15.12,"cpm":485.27,"purchases":1,"cpa":287.28,"roas":6.96},
+    {"adset":"White Dhurandhar","campaign":"New Campaign- for recovery","spend":349.53,"impressions":974,"reach":841,"clicks":30,"ctr":3.08,"cpc":11.65,"cpm":358.86,"purchases":2,"cpa":174.77,"roas":12.87},
+    {"adset":"Black Dhurandhar","campaign":"New Campaign- for recovery","spend":463.52,"impressions":659,"reach":571,"clicks":12,"ctr":1.82,"cpc":38.63,"cpm":703.37,"purchases":0,"cpa":null,"roas":null},
+    {"adset":"Karigari","campaign":"Dhirai Scale -ASC","spend":1140.93,"impressions":3999,"reach":3152,"clicks":149,"ctr":3.73,"cpc":7.66,"cpm":285.30,"purchases":3,"cpa":380.31,"roas":6.99},
+    {"adset":"Black and multiple","campaign":"Retargeting- new","spend":2220.35,"impressions":6441,"reach":4238,"clicks":304,"ctr":4.72,"cpc":7.30,"cpm":344.72,"purchases":4,"cpa":555.09,"roas":4.43},
+    {"adset":"Best performing ads","campaign":"Retargeting- new","spend":6580.66,"impressions":18841,"reach":12715,"clicks":704,"ctr":3.74,"cpc":9.35,"cpm":349.27,"purchases":19,"cpa":346.35,"roas":7.55},
+    {"adset":"New Sales Ad Set","campaign":"Dhirai Scale -ASC","spend":11224.38,"impressions":63343,"reach":56418,"clicks":1457,"ctr":2.30,"cpc":7.70,"cpm":177.20,"purchases":11,"cpa":1020.40,"roas":2.14},
+    {"adset":"Broad","campaign":"Black DHURANDHAR","spend":7898.57,"impressions":52943,"reach":42611,"clicks":1868,"ctr":3.53,"cpc":4.23,"cpm":149.19,"purchases":16,"cpa":493.66,"roas":5.69}
+  ],
+  "inventory_issues": [
+    {"product":"\"Utsav\" - Mal Cotton Full Flare Anarkali Suit Set with Silver Gota","status":"ACTIVE","total_inventory":0,"note":"All 3 variants (S/Yellow, S/Lavender, S/Pink) at 0 units - live on site with no stock"}
+  ],
+  "opportunity_score": 79,
+  "opportunity_recs": [
+    "Consolidate the 4 similar ad sets in 'New Campaign- for recovery' (Rayon, Karigar, White Dhurandhar, Black Dhurandhar) - Meta flags audience/creative fragmentation slowing the learning phase (+7 pt lift).",
+    "'Black and multiple' ad set has a narrow audience (20.1K-23.6K reach) - consider expanding or testing Advantage+ audience.",
+    "Try Maximise-Conversions goal at account level for an estimated 17% lower cost per result."
+  ],
+  "unavailable_metrics": [
+    "Cancellations and failed-payment counts are not exposed by the connected Shopify tools - not included in this report.",
+    "True 'abandoned checkout' counts are not directly available; sessions_that_reached_checkout minus sessions_that_completed_checkout is used as a rough proxy and looks affected by a tracking gap (see Recommendations).",
+    "Google Sheets access was not available in this environment, so this report was generated as an Excel workbook instead and emailed as a draft with the file attached where possible."
+  ]
+}
