@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "shopify_domain": "36dhns-ed.myshopify.com",
+    "shopify_shop_name": "Dhirai",
+    "currency": "INR",
+    "meta_ad_account_id": "979830497515712",
+    "meta_ad_account_name": "Dhirai",
+    "timezone": "Asia/Kolkata",
+    "gmail_to": "atul012001@gmail.com",
+    "gmail_cc": []
+  },
+  "shopify_daily": {
+    "2026-07-05": {"orders": 66, "gross_sales": 165826.00, "discounts": -5866.03, "returns": 0, "net_sales": 159959.97, "shipping_charges": 0, "taxes": 0, "total_sales": 159959.97, "average_order_value": 2423.635},
+    "2026-07-06": {"orders": 66, "gross_sales": 162175.07, "discounts": -2123.02, "returns": 0, "net_sales": 160052.05, "shipping_charges": 0, "taxes": 304.93, "total_sales": 160356.98, "average_order_value": 2425.031},
+    "2026-07-07": {"orders": 65, "gross_sales": 157434.00, "discounts": -329.85, "returns": 0, "net_sales": 157104.15, "shipping_charges": 0, "taxes": 0, "total_sales": 157104.15, "average_order_value": 2416.986},
+    "2026-07-08": {"orders": 57, "gross_sales": 132865.03, "discounts": -799.65, "returns": -4748, "net_sales": 127317.38, "shipping_charges": 0, "taxes": 426.97, "total_sales": 127744.35, "average_order_value": 2316.936},
+    "2026-07-09": {"orders": 73, "gross_sales": 190834.80, "discounts": -1862.32, "returns": -2499, "net_sales": 186473.48, "shipping_charges": 0, "taxes": 381.20, "total_sales": 186854.68, "average_order_value": 2588.664},
+    "2026-07-10": {"orders": 50, "gross_sales": 121913.25, "discounts": -1613.22, "returns": 0, "net_sales": 120300.03, "shipping_charges": 0, "taxes": 533.75, "total_sales": 120833.78, "average_order_value": 2406.00},
+    "2026-07-11": {"orders": 55, "gross_sales": 130491.00, "discounts": -1759.27, "returns": 0, "net_sales": 128731.73, "shipping_charges": 0, "taxes": 0, "total_sales": 128731.73, "average_order_value": 2340.576},
+    "2026-07-12": {"orders": 87, "gross_sales": 269307.80, "discounts": -839.65, "returns": -47285, "net_sales": 221183.15, "shipping_charges": 0, "taxes": 381.20, "total_sales": 221564.35, "average_order_value": 3085.84}
+  },
+  "meta_daily": {
+    "2026-07-05": {"spend": 43115.88, "impressions": 259257, "reach": 210046, "clicks": 5727, "ctr": 0.0221, "cpc": 7.53, "cpm": 166.31, "roas": 3.54, "purchases": 64, "cost_per_purchase": 673.69},
+    "2026-07-06": {"spend": 41465.01, "impressions": 244063, "reach": 204927, "clicks": 5323, "ctr": 0.0218, "cpc": 7.79, "cpm": 169.89, "roas": 3.63, "purchases": 62, "cost_per_purchase": 668.79},
+    "2026-07-07": {"spend": 43731.55, "impressions": 289695, "reach": 229432, "clicks": 6152, "ctr": 0.0212, "cpc": 7.11, "cpm": 150.96, "roas": 3.37, "purchases": 63, "cost_per_purchase": 694.15},
+    "2026-07-08": {"spend": 42618.38, "impressions": 262678, "reach": 209931, "clicks": 5665, "ctr": 0.0216, "cpc": 7.52, "cpm": 162.25, "roas": 3.05, "purchases": 56, "cost_per_purchase": 761.04},
+    "2026-07-09": {"spend": 43342.39, "impressions": 258075, "reach": 206133, "clicks": 6024, "ctr": 0.0233, "cpc": 7.19, "cpm": 167.94, "roas": 3.87, "purchases": 66, "cost_per_purchase": 656.70},
+    "2026-07-10": {"spend": 41607.98, "impressions": 247234, "reach": 207925, "clicks": 5570, "ctr": 0.0225, "cpc": 7.47, "cpm": 168.29, "roas": 2.70, "purchases": 47, "cost_per_purchase": 885.28},
+    "2026-07-11": {"spend": 35653.10, "impressions": 216060, "reach": 180186, "clicks": 4684, "ctr": 0.0217, "cpc": 7.61, "cpm": 165.01, "roas": 3.49, "purchases": 53, "cost_per_purchase": 672.70},
+    "2026-07-12": {"spend": 47572.44, "impressions": 259220, "reach": 214990, "clicks": 5765, "ctr": 0.0222, "cpc": 8.25, "cpm": 183.52, "roas": 5.45, "purchases": 84, "cost_per_purchase": 566.34}
+  },
+  "shopify_products_daily": {
+    "2026-07-12": [
+      {"product": "Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants", "gross_sales": 52479, "net_sales": 52229.1, "orders": 18},
+      {"product": "\"The Essential\" - White Cotton Shirt & Pant Co-ord Set", "gross_sales": 46777, "net_sales": 46677.05, "orders": 20},
+      {"product": "\"Aina\" - Ivory Breathable Cotton Mirror Work Coord Set", "gross_sales": 19794, "net_sales": 0, "orders": 3},
+      {"product": "\"Aura\" - Cream Lightweight Breathable Lace-Detail Suit Set", "gross_sales": 16495, "net_sales": 0, "orders": 3},
+      {"product": "\"Maira\" — Premium Pure Cotton Minimalist Co-ord Set", "gross_sales": 9996, "net_sales": 9996, "orders": 2},
+      {"product": "Elegant Pakistani-Style Mauve Kurta Set", "gross_sales": 9995, "net_sales": 7996, "orders": 5},
+      {"product": "\"Aradhana\" - Rust Red Gota Border Anarkali Suit Set", "gross_sales": 8997, "net_sales": 0, "orders": 3},
+      {"product": "Eclipse Grace Premium Crepe Salwar Suit set | DHIRAI", "gross_sales": 8997, "net_sales": 8997, "orders": 2},
+      {"product": "The Dhurandhar Black Short Kurta Set | A Dhirai Essential", "gross_sales": 8996, "net_sales": 8996, "orders": 4},
+      {"product": "Embroidered Rayon Kurti with Farshi Salwar Set — Elegant Ethnic Co-Ord for Women", "gross_sales": 8397, "net_sales": 8257.05, "orders": 3},
+      {"product": "\"Kyra\" — Chocolate Brown Premium Rayon Minimalist Co-ord Set", "gross_sales": 4998, "net_sales": 4998, "orders": 2},
+      {"product": "Sage Aura cotton Kurta Set | DHIRAI", "gross_sales": 4198, "net_sales": 4198, "orders": 2},
+      {"product": "\"Riva\" — Premium Flowy Rayon Co-ord Set", "gross_sales": 3998, "net_sales": 3998, "orders": 2},
+      {"product": "The Essential Co-ord Set", "gross_sales": 3998, "net_sales": 3998, "orders": 2},
+      {"product": "Black Cotton Kurta Pant Set", "gross_sales": 3998, "net_sales": 3998, "orders": 2}
+    ]
+  },
+  "shopify_inventory_watch_daily": {
+    "2026-07-12": [
+      {"product": "\"Zariya\" Stone Hoops", "starting_units": 0, "ending_units": 0, "units_sold": 0, "status": "OUT OF STOCK"},
+      {"product": "\"Utsav\" - Mal Cotton Full Flare Anarkali Suit Set with Silver Gota", "starting_units": 0, "ending_units": 0, "units_sold": 0, "status": "OUT OF STOCK"},
+      {"product": "Noor Sand Kurta Set| DHIRAI", "starting_units": 47, "ending_units": 46, "units_sold": 1, "status": "LOW (<50)"},
+      {"product": "\"Nazakat\" Long Chain Jhumki Earrings", "starting_units": 150, "ending_units": 150, "units_sold": 0, "status": "WATCH"}
+    ]
+  },
+  "shopify_payment_issues_daily": {
+    "2026-07-12": [
+      {"order": "#DHIRAI619171", "customer": "Yogesh Martand Aglave", "total": 12896.0, "status": "VOIDED", "time_ist": "23:10"},
+      {"order": "#DHIRAI619172", "customer": "Yogesh Martand Aglave", "total": 16195.0, "status": "VOIDED", "time_ist": "23:11"},
+      {"order": "#DHIRAI619173", "customer": "Yogesh Martand Aglave", "total": 16195.0, "status": "VOIDED", "time_ist": "23:12"},
+      {"order": "#DHIRAI619155", "customer": "Abbas .", "total": 1999.0, "status": "VOIDED", "time_ist": "19:49"}
+    ]
+  },
+  "shopify_funnel_daily": {
+    "2026-07-05": {"sessions": 4087, "cart_additions": 229, "reached_checkout": 2, "completed_checkout": 0, "conversion_rate": 0.0},
+    "2026-07-06": {"sessions": 3833, "cart_additions": 219, "reached_checkout": 2, "completed_checkout": 1, "conversion_rate": 0.00026089225150013044},
+    "2026-07-07": {"sessions": 4127, "cart_additions": 231, "reached_checkout": 0, "completed_checkout": 0, "conversion_rate": 0.0},
+    "2026-07-08": {"sessions": 3760, "cart_additions": 201, "reached_checkout": 2, "completed_checkout": 1, "conversion_rate": 0.00026595744680851064},
+    "2026-07-09": {"sessions": 4005, "cart_additions": 230, "reached_checkout": 1, "completed_checkout": 1, "conversion_rate": 0.00024968789013732833},
+    "2026-07-10": {"sessions": 3691, "cart_additions": 200, "reached_checkout": 2, "completed_checkout": 1, "conversion_rate": 0.000270929287455974},
+    "2026-07-11": {"sessions": 3221, "cart_additions": 199, "reached_checkout": 2, "completed_checkout": 0, "conversion_rate": 0.0},
+    "2026-07-12": {"sessions": 3940, "cart_additions": 259, "reached_checkout": 2, "completed_checkout": 1, "conversion_rate": 0.0002538071065989848}
+  },
+  "meta_campaigns_daily": {
+    "2026-07-12": [
+      {"campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 15542.75, "impressions": 121040, "clicks": 1435, "ctr": 0.0119, "cpc": 10.83, "roas": 2.02, "purchases": 12, "cost_per_purchase": 1295.23},
+      {"campaign": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 13929.41, "impressions": 70083, "clicks": 1862, "ctr": 0.0266, "cpc": 7.48, "roas": 6.17, "purchases": 35, "cost_per_purchase": 397.98},
+      {"campaign": "Black DHURANDHAR", "status": "ACTIVE", "spend": 9091.50, "impressions": 42207, "clicks": 1479, "ctr": 0.0350, "cpc": 6.15, "roas": 4.45, "purchases": 12, "cost_per_purchase": 757.63},
+      {"campaign": "Retargeting- new", "status": "ACTIVE", "spend": 9008.78, "impressions": 25890, "clicks": 989, "ctr": 0.0382, "cpc": 9.11, "roas": 11.27, "purchases": 25, "cost_per_purchase": 360.35}
+    ]
+  },
+  "meta_campaigns_7day": {
+    "window": "2026-07-05_to_2026-07-11",
+    "campaigns": [
+      {"campaign": "New Campaign- for recovery", "spend": 97987.08, "impressions": 819741, "clicks": 10561, "ctr": 0.0129, "cpc": 9.28, "roas": 2.40, "purchases": 94, "cost_per_purchase": 1042.42},
+      {"campaign": "Dhirai Scale -ASC", "spend": 83964.64, "impressions": 479484, "clicks": 10772, "ctr": 0.0225, "cpc": 7.79, "roas": 3.09, "purchases": 119, "cost_per_purchase": 705.59},
+      {"campaign": "Black DHURANDHAR", "spend": 55963.41, "impressions": 329131, "clicks": 11618, "ctr": 0.0353, "cpc": 4.82, "roas": 3.55, "purchases": 80, "cost_per_purchase": 699.54},
+      {"campaign": "Retargeting- new", "spend": 53619.16, "impressions": 148706, "clicks": 6194, "ctr": 0.0417, "cpc": 8.66, "roas": 5.45, "purchases": 118, "cost_per_purchase": 454.40}
+    ]
+  },
+  "meta_warnings_daily": {
+    "2026-07-12": [
+      {"type": "active_delivery_narrow_audience", "object": "Black and multiple (Ad Set)", "detail": "Estimated audience size 20,900-24,600 (narrow)", "recommendation": "Evaluate expanding audience or A/B test using Advantage+ audience"}
+    ]
+  },
+  "data_notes": {
+    "2026-07-12": [
+      "Cancellations and abandoned-checkout counts could not be pulled as distinct metrics from the Shopify Analytics API this run; refunds/voids are captured under Returns and the Payment Issues table instead.",
+      "Shopify session funnel tracking (reached/completed checkout) shows only 1-2 sessions/day vs 50-90 actual orders daily — likely an analytics/pixel tracking gap, not real conversion performance. Flagged for review, not used in KPI calculations."
+    ]
+  }
+}
