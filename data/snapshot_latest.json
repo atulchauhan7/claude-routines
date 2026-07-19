@@ -1,0 +1,59 @@
+{
+  "date": "2026-07-18",
+  "currency": "INR",
+  "shop_domain": "36dhns-ed.myshopify.com",
+  "meta_account_id": "979830497515712",
+  "products_yesterday": [
+    ["Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants", 29988, 29988, 12, 29988],
+    ["\"The Essential\" - White Cotton Shirt & Pant Co-ord Set", 18191, 18091.05, 9, 18091.05],
+    ["Everyday Elegance Cotton Kurta Pant Set", 7996, 7996, 3, 7996],
+    ["Noor Sand Kurta Set", 6998, 6998, 2, 6998],
+    ["\"Inayat\" - Power Pastel Cotton Shirt & Trouser Co-ord Set", 5997, 5997, 3, 5997],
+    ["Elegant Pakistani-Style Mauve Kurta Set", 3998, 3998, 2, 3998],
+    ["Vidhya Georgette Suit Set", 3499, 3499, 1, 3499],
+    ["\"Aura\" - Cream Lightweight Breathable Lace-Detail Suit Set", 3299, 3299, 1, 3299],
+    ["\"Gaja\" - Handblock Print Cotton Co-ord Set", 2799, 2799, 1, 2799],
+    ["Embroidered Rayon Kurti with Farshi Salwar Set - Elegant Ethnic Co-Ord for Women", 2799, 2799, 1, 2799]
+  ],
+  "products_7day": [
+    ["Ira Rayon Co-ord Set for Women | Relaxed Fit Shirt Top with Draped Pants", 307377, 305212.87, 114, 305212.87],
+    ["\"The Essential\" - White Cotton Shirt & Pant Co-ord Set", 233585, 230981.2, 110, 230981.2],
+    ["The Dhurandhar Black Short Kurta Set | A Dhirai Essential", 56825, 54565.93, 21, 54565.93],
+    ["Embroidered Rayon Kurti with Farshi Salwar Set - Elegant Ethnic Co-Ord for Women", 41985, 41565.15, 15, 41565.15],
+    ["\"Inayat\" - Power Pastel Cotton Shirt & Trouser Co-ord Set", 41979, 41779.1, 20, 41779.1],
+    ["Elegant Pakistani-Style Mauve Kurta Set", 39975.07, 37976.07, 20, 38281],
+    ["\"Riva\" - Premium Flowy Rayon Co-ord Set", 32384, 32384, 15, 32384],
+    ["Eclipse Grace Premium Crepe Salwar Suit set | DHIRAI", 26991, 26991, 8, 26991],
+    ["Everyday Elegance Cotton Kurta Pant Set", 25987, 23356.32, 13, 23356.32],
+    ["\"Aina\" - Ivory Breathable Cotton Mirror Work Coord Set", 19794, 0, 3, 0]
+  ],
+  "campaigns_yesterday": [
+    {"name": "New Campaign- for recovery", "status": "ACTIVE", "spend": 10411.94, "impressions": 108513, "reach": 94459, "clicks": 1246, "ctr": 1.15, "cpc": 8.36, "cpm": 95.95, "purchases": 11, "cpa": 946.54, "roas": 2.59},
+    {"name": "Retargeting- new", "status": "ACTIVE", "spend": 6305.75, "impressions": 20759, "reach": 13594, "clicks": 803, "ctr": 3.87, "cpc": 7.85, "cpm": 303.76, "purchases": 8, "cpa": 788.22, "roas": 4.42},
+    {"name": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 11206.13, "impressions": 63719, "reach": 55244, "clicks": 2065, "ctr": 3.24, "cpc": 5.43, "cpm": 175.87, "purchases": 13, "cpa": 862.01, "roas": 2.66},
+    {"name": "Black DHURANDHAR", "status": "ACTIVE", "spend": 6623.22, "impressions": 40540, "reach": 35669, "clicks": 1513, "ctr": 3.73, "cpc": 4.38, "cpm": 163.37, "purchases": 6, "cpa": 1103.87, "roas": 1.90}
+  ],
+  "adsets_yesterday": [
+    {"name": "Rayon", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 8257.58, "impressions": 96197, "reach": 83913, "clicks": 1065, "ctr": 1.11, "cpc": 7.75, "cpm": 85.84, "purchases": 10, "cpa": 825.76, "roas": 3.03},
+    {"name": "Karigar", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 30.27, "impressions": 139, "reach": 132, "clicks": 2, "ctr": 1.44, "cpc": 15.14, "cpm": 217.77, "purchases": null, "cpa": null, "roas": null},
+    {"name": "White Dhurandhar", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 2110.60, "impressions": 12135, "reach": 11079, "clicks": 178, "ctr": 1.47, "cpc": 11.86, "cpm": 173.93, "purchases": 1, "cpa": 2110.60, "roas": 0.95},
+    {"name": "Black Dhurandhar", "campaign": "New Campaign- for recovery", "status": "ACTIVE", "spend": 13.49, "impressions": 42, "reach": 39, "clicks": 1, "ctr": 2.38, "cpc": 13.49, "cpm": 321.19, "purchases": null, "cpa": null, "roas": null},
+    {"name": "Karigari", "campaign": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 316.84, "impressions": 1115, "reach": 951, "clicks": 47, "ctr": 4.22, "cpc": 6.74, "cpm": 284.16, "purchases": null, "cpa": null, "roas": null},
+    {"name": "Black and multiple", "campaign": "Retargeting- new", "status": "ACTIVE", "spend": 1607.91, "impressions": 5289, "reach": 3985, "clicks": 262, "ctr": 4.95, "cpc": 6.14, "cpm": 304.01, "purchases": 1, "cpa": 1607.91, "roas": 1.24},
+    {"name": "Best performing ads", "campaign": "Retargeting- new", "status": "ACTIVE", "spend": 4697.84, "impressions": 15470, "reach": 10816, "clicks": 541, "ctr": 3.50, "cpc": 8.68, "cpm": 303.67, "purchases": 7, "cpa": 671.12, "roas": 5.51},
+    {"name": "New Sales Ad Set", "campaign": "Dhirai Scale -ASC", "status": "ACTIVE", "spend": 10889.29, "impressions": 62604, "reach": 54421, "clicks": 2018, "ctr": 3.22, "cpc": 5.40, "cpm": 173.94, "purchases": 13, "cpa": 837.64, "roas": 2.74},
+    {"name": "Broad", "campaign": "Black DHURANDHAR", "status": "ACTIVE", "spend": 6623.22, "impressions": 40540, "reach": 35669, "clicks": 1513, "ctr": 3.73, "cpc": 4.38, "cpm": 163.37, "purchases": 6, "cpa": 1103.87, "roas": 1.90}
+  ],
+  "anomalies": [
+    "Ad set 'Black and multiple' (Retargeting- new): actively delivering to a narrow audience (est. 23,100-27,200 reach). Recommendation: expand audience or A/B test Advantage+ audience."
+  ],
+  "unavailable_metrics": [
+    "Failed payments: not exposed by the Shopify ShopifyQL analytics endpoints available in this session.",
+    "Abandoned checkouts (count/value): not exposed by the Shopify ShopifyQL analytics endpoints available in this session; sessions_that_reached_checkout is used as a partial proxy.",
+    "Order-level cancellation and refund reasons: only the aggregate 'returns' total is available via ShopifyQL; per-order detail requires the Shopify Admin UI.",
+    "Financial status breakdown (pending/paid/refunded): ShopifyQL rejected 'financial_status' / 'order_financial_status' as unknown columns - not queryable via the analytics API in this session.",
+    "Google Sheets: no Google Sheets connector was available in this session, so this dashboard was delivered as an Excel workbook instead.",
+    "Direct email send / attaching this file to a Gmail draft: not supported by the Gmail tools available in this session (draft-only, no attachments) - the workbook was committed to the claude-routines repo and linked instead."
+  ],
+  "tracking_issue_note": "Shopify's sessions_that_completed_checkout metric reported 0-1 per day all week despite 41-87 real orders/day per the sales table - this looks like a checkout/pixel attribution gap in Shopify analytics, not an actual conversion problem. Recommend having someone check the Shopify Analytics/pixel configuration."
+}

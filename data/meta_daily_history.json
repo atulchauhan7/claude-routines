@@ -1,0 +1,10 @@
+[
+  {"date": "2026-07-11", "spend": 35653.10, "impressions": 216060, "reach": 180186, "clicks": 4684, "ctr": 2.17, "cpc": 7.61, "cpm": 165.01, "purchases": 53, "cpa": 672.70, "roas": 3.49},
+  {"date": "2026-07-12", "spend": 47584.42, "impressions": 259228, "reach": 214990, "clicks": 5765, "ctr": 2.22, "cpc": 8.25, "cpm": 183.56, "purchases": 84, "cpa": 566.48, "roas": 5.45},
+  {"date": "2026-07-13", "spend": 45884.99, "impressions": 236170, "reach": 184417, "clicks": 5178, "ctr": 2.19, "cpc": 8.86, "cpm": 194.29, "purchases": 54, "cpa": 849.72, "roas": 3.00},
+  {"date": "2026-07-14", "spend": 44951.34, "impressions": 232320, "reach": 189826, "clicks": 5440, "ctr": 2.34, "cpc": 8.26, "cpm": 193.49, "purchases": 57, "cpa": 788.62, "roas": 3.17},
+  {"date": "2026-07-15", "spend": 43931.17, "impressions": 254112, "reach": 199911, "clicks": 6195, "ctr": 2.44, "cpc": 7.09, "cpm": 172.88, "purchases": 61, "cpa": 720.18, "roas": 3.62},
+  {"date": "2026-07-16", "spend": 43468.39, "impressions": 279467, "reach": 216156, "clicks": 6412, "ctr": 2.29, "cpc": 6.78, "cpm": 155.54, "purchases": 69, "cpa": 629.98, "roas": 3.94},
+  {"date": "2026-07-17", "spend": 44911.73, "impressions": 340954, "reach": 263644, "clicks": 7625, "ctr": 2.24, "cpc": 5.89, "cpm": 131.72, "purchases": 73, "cpa": 615.23, "roas": 4.06},
+  {"date": "2026-07-18", "spend": 34547.04, "impressions": 233531, "reach": 185932, "clicks": 5627, "ctr": 2.41, "cpc": 6.14, "cpm": 147.93, "purchases": 38, "cpa": 909.13, "roas": 2.82}
+]

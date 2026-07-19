@@ -4,3 +4,9 @@ google-auth-oauthlib>=1.2.0
 google-api-python-client>=2.118.0
 requests>=2.31.0
 pytz>=2024.1
+
+# generate_dashboard.py fallback (used when Google Sheets / service-account
+# credentials are not available in the running environment, e.g. this
+# Claude Code on the web session): builds the same dashboard as an .xlsx
+# workbook from data/*.json instead of writing to Google Sheets.
+openpyxl>=3.1.0
